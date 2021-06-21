@@ -1,0 +1,14 @@
+{
+    "podcastlist": [
+        {
+            "id": "000000",
+            "title": "Podcast1",
+            "directory": "Subdirectory"
+        },
+        {
+            "id": "000000",
+            "title": "Podcast2",
+            "directory": "Subdirectory"
+        }
+    ]
+}
