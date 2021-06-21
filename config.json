@@ -1,0 +1,16 @@
+{
+    "podcastindex":{
+        "url":"https://api.podcastindex.org/api/1.0",
+        "key":"xxxxxxxxxxxxxxxxxxxx",
+        "secret":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    "directory":{
+        "data":"/data/files/podcastindex",
+        "log":"LOG",
+        "play":"PLAY",
+        "playlist":"/network/podcasts"
+    },
+    "file":{
+        "podcastlist":"/etc/podcastindex/podcastlist.json"
+    }
+}
