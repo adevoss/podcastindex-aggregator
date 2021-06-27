@@ -7,7 +7,7 @@ Example:
 /path/to/aggregator.py
 
 Options:
-/path/to/aggregator.py [ALL|PodcastIndex id]
+/path/to/aggregator.py [ALL|'part of title']
 No options is the same as ALL
 
 configuration.json:
@@ -22,6 +22,6 @@ configuration.json:
 
 podcastlist.json:
 - id: search for the id on https://podcastindex.org. The id is at the end of the url.
-- title: Used only for the file to be readable.
+- title: Used for creating directory.
 - directory: Subdirectory of 'data' (see above) to store the podcast in.
 
