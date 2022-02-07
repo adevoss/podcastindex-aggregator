@@ -13,13 +13,18 @@ def podcast(feedId):
     return feed_result
 
 def episodes(feedId):
-    url = "https://api.podcastindex.org/api/1.0/episodes/byfeedid?id=" + str(feedId)
+    number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
+    url = "https://api.podcastindex.org/api/1.0/episodes/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
     episodes_result = PIfunctions.request(url)
     return episodes_result
 
 def process_file(data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process):
     for podcast_data in data['podcastlist']:
-        if podcast_to_process == "ALL" or podcast_to_process in podcast_data['title']:
+        if podcast_to_process == "ALL":
+           process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite)
+        if podcast_to_process == podcast_data['id']:
+           message = 'Processing podcast \''+ podcast_data['title'] + '\'' + ' at ' + dateString
+           generalfunctions.log(log_path, message)
            process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite)
 
 def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite):
@@ -50,6 +55,9 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
 
        # process episodes
        process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
+    else:
+       message = 'Skipping podcast \'' + podcast_data["title"] + '\''
+       generalfunctions.log(log_path, message)
 
 def process_chapter(chapter, path, log_path, overwrite):
     # logging
@@ -139,6 +147,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     if url != None and url != '':
         url = episode["enclosureUrl"]
         enclosure_file = os.path.basename(url)
+        enclosure_file = enclosure_file.split('?')[0]
         enclosure_path = os.path.join(episode_path, enclosure_file)
         enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
         downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite)
@@ -196,30 +205,43 @@ def aggregate(podcast_to_process):
     generalfunctions.create_directory(playlist_path)
 
     now = generalfunctions.now()
-    dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+    if podcast_to_process == "ALL":
+       dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+    else:
+       dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
     log_path = os.path.join(log_path, dateString+'.log')
     playlist_path = os.path.join(playlist_path, dateString+'.m3u')
     overwrite = False
 
     # logging
-    message = 'Processing file \''+ podcastlist_file + '\'' + ' at ' + dateString
-    generalfunctions.log(log_path, message)
+    if podcast_to_process == "ALL":
+       message = 'Processing file \''+ podcastlist_file + '\'' + ' at ' + dateString
+       generalfunctions.log(log_path, message)
+    else:
+       message = 'Processing podcast \''+ podcast_to_process + '\'' + ' at ' + dateString
 
     data = generalfunctions.read_json(podcastlist_file, log_path)
     process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
 
     # logging
     now = generalfunctions.now()
-    dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
-    message = 'Done at ' + dateString
+    if podcast_to_process == "ALL":
+       dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+       message = 'Done at ' + dateString
+       generalfunctions.log(log_path, message)
+    else:
+       dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+       message = 'Done at ' + dateString
+
+
+try:
+    if len(sys.argv) == 2:
+       podcast_to_process = sys.argv[1]
+    else:
+       podcast_to_process = "ALL"
+
+    configuration.read() 
+    aggregate(podcast_to_process)
+except Exception:
+    message = str(Exception)
     generalfunctions.log(log_path, message)
-
-
-
-if len(sys.argv) == 2:
-    podcast_to_process = sys.argv[1]
-else:
-    podcast_to_process = "ALL"
-
-configuration.read() 
-aggregate(podcast_to_process)

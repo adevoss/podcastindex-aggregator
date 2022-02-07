@@ -9,15 +9,20 @@ from datetime import datetime
 
 
 def log(path, message):
-    if os.path.isfile(path):
-        with open(path, "a") as outfile:
-            outfile.write("\n")
-    else:
-        with open(path, 'w') as outfile: 
-            pass
+    try:
+        if os.path.isfile(path):
+            with open(path, "a") as outfile:
+                outfile.write("\n")
+        else:
+            with open(path, 'w') as outfile: 
+                pass
 
-    with open(path, "a") as outfile:
-        outfile.write(message)
+        with open(path, "a") as outfile:
+            outfile.write(message)
+
+    except Exception as e:
+        log(log_path, str(e))
+        print(e)
 
 def create_directory(path):
     if not os.path.isdir(path):
@@ -74,6 +79,11 @@ def file_name_noextension(path):
 
 def format_dateYYYMMDDHHMM(date):
     format = "%Y%m%d%H%M"
+    formatted = date.strftime(format)
+    return formatted
+
+def format_dateYYYMMDDHHMMSS(date):
+    format = "%Y%m%d%H%M%S"
     formatted = date.strftime(format)
     return formatted
 
