@@ -47,13 +47,7 @@ def request(url):
     # perform the actual post request
     r = requests.post(url, headers=request_header())
 
-    # if it's successful, dump the contents (in a prettified json-format)
-    # else, dump the error code we received
-    if r.status_code == 200:
-        #print ('<< Received >>')
-        #print (json.dumps(pretty_json, indent=2))
-        result = json.loads(r.text)
-    else:
-        result ='<< Received ' + str(r.status_code) + '>>'
+    # dump the contents (in a prettified json-format)
+    result = json.loads(r.text)
     return result
 

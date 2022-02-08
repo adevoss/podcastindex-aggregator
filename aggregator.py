@@ -7,6 +7,16 @@ import sys
 import os
 import json
 
+def search_podcast(feed):
+    url = "https://api.podcastindex.org/api/1.0/podcasts/byfeedurl?url=" + feed + "&pretty"
+    search_result = PIfunctions.request(url)
+    status = generalfunctions.to_boolean(search_result['status'])
+    if status:
+       podcast_id = search_result['feed']['id']
+    else:
+       podcast_id = ""
+    return podcast_id
+
 def podcast(feedId):
     url = configuration.config["podcastindex"]["url"] + "/podcasts/byfeedid?id=" + str(feedId)
     feed_result = PIfunctions.request(url)
@@ -22,10 +32,11 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
     for podcast_data in data['podcastlist']:
         if podcast_to_process == "ALL":
            process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite)
-        if podcast_to_process == podcast_data['id']:
-           message = 'Processing podcast \''+ podcast_data['title'] + '\'' + ' at ' + dateString
-           generalfunctions.log(log_path, message)
-           process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite)
+        else:
+           if podcast_to_process == podcast_data['id'] or podcast_to_process == podcast_data['title']:
+              message = 'Processing podcast \''+ podcast_data['title'] + '\'' + ' at ' + dateString
+              generalfunctions.log(log_path, message)
+              process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite)
 
 def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite):
     if podcast_data["id"][:1] != '#':
@@ -209,6 +220,7 @@ def aggregate(podcast_to_process):
        dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
     else:
        dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+
     log_path = os.path.join(log_path, dateString+'.log')
     playlist_path = os.path.join(playlist_path, dateString+'.m3u')
     overwrite = False
@@ -220,18 +232,25 @@ def aggregate(podcast_to_process):
     else:
        message = 'Processing podcast \''+ podcast_to_process + '\'' + ' at ' + dateString
 
-    data = generalfunctions.read_json(podcastlist_file, log_path)
-    process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
-
-    # logging
-    now = generalfunctions.now()
-    if podcast_to_process == "ALL":
-       dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
-       message = 'Done at ' + dateString
-       generalfunctions.log(log_path, message)
+    if podcast_to_process[0:4].lower() == "http":
+       message = 'Podcast feed \''+ podcast_to_process + '\'' + ' not in podcastindex'
+       podcast_to_process = search_podcast(podcast_to_process)
+    if podcast_to_process == "":
+       pass
+       #generalfunctions.log(log_path, message)
     else:
-       dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
-       message = 'Done at ' + dateString
+       data = generalfunctions.read_json(podcastlist_file, log_path)
+       process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
+
+       # logging
+       now = generalfunctions.now()
+       if podcast_to_process == "ALL":
+          dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+          message = 'Done at ' + dateString
+          generalfunctions.log(log_path, message)
+       else:
+          dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+          message = 'Done at ' + dateString
 
 
 try:

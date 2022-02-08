@@ -95,3 +95,8 @@ def date_epoch(date):
     epoch = date.timestamp()
     return epoch
 
+def to_boolean(text):
+    status = False
+    if text.lower() == "true":
+       status = True
+    return status
