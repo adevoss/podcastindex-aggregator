@@ -38,7 +38,7 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
            else:
               if podcast_to_process == podcast_data['id'] or podcast_to_process == podcast_data['title']:
                  message = 'Processing podcast \''+ podcast_data['title'] + '\'' + ' at ' + dateString
-                 generalfunctions.log(log_path, message)
+                 generalfunctions.log(log_path, message, False)
                  process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
 
 def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process):
@@ -57,7 +57,7 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
           print('==========================================================')
           print(message)
           print('==========================================================')
-          generalfunctions.log(log_path, message)
+          generalfunctions.log(log_path, message, False)
 
           # download feed assets
           feed = podcast(podcast_data["id"])["feed"]
@@ -75,14 +75,14 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
           process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
     else:
        message = 'Skipping podcast \'' + podcast_data["title"] + '\''
-       generalfunctions.log(log_path, message)
+       generalfunctions.log(log_path, message, False)
 
 def process_chapter(chapter, path, log_path, overwrite):
     # logging
     chapter_title = str(chapter["title"][0:50])
     message = 'Processing chapter \'' + chapter_title + '\''
     print(message)
-    generalfunctions.log(log_path, message)
+    generalfunctions.log(log_path, message, False)
 
     # create directory for chapter
     chapter_directory = str(chapter["startTime"]) + '-' + chapter_title
@@ -140,7 +140,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     print('==========================================================')
     print(message)
     print('==========================================================')
-    generalfunctions.log(log_path, message)
+    generalfunctions.log(log_path, message, False)
 
     # create directory for episode
     episode_path = os.path.join(path, title)
@@ -235,7 +235,7 @@ def aggregate(podcast_to_process):
     # logging
     if podcast_to_process == "ALL":
        message = 'Processing file \''+ podcastlist_file + '\'' + ' at ' + dateString
-       generalfunctions.log(log_path, message)
+       generalfunctions.log(log_path, message, False)
     else:
        message = 'Processing podcast \''+ podcast_to_process + '\'' + ' at ' + dateString
 
@@ -244,7 +244,7 @@ def aggregate(podcast_to_process):
        podcast_to_process = search_podcast(podcast_to_process)
     if podcast_to_process == "":
        pass
-       #generalfunctions.log(log_path, message)
+       #generalfunctions.log(log_path, message, False)
     else:
        data = generalfunctions.read_json(podcastlist_file, log_path)
        process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
@@ -254,7 +254,7 @@ def aggregate(podcast_to_process):
        if podcast_to_process == "ALL":
           dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
           message = 'Done at ' + dateString
-          generalfunctions.log(log_path, message)
+          generalfunctions.log(log_path, message, False)
        else:
           dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
           message = 'Done at ' + dateString
@@ -274,4 +274,4 @@ try:
 
 except Exception:
     message = str(Exception)
-    generalfunctions.log(log_path, message)
+    generalfunctions.log(log_path, message, True)

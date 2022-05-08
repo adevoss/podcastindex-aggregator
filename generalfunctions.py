@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import csv
 import os
 import requests
@@ -8,21 +9,17 @@ import pathlib
 from datetime import datetime
 
 
-def log(path, message):
+def log(path, message, isError):
     try:
-        if os.path.isfile(path):
-            with open(path, "a") as outfile:
-                outfile.write("\n")
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.FileHandler(path)])
+        if isError:
+           logging.error(message)
         else:
-            with open(path, 'w') as outfile: 
-                pass
-
-        with open(path, "a") as outfile:
-            outfile.write(message)
+           logging.info(message)
 
     except Exception as e:
-        log(log_path, str(e))
-        print(e)
+        logging.error(str(e))
+        #print(e)
 
 def create_directory(path):
     if not os.path.isdir(path):
@@ -35,7 +32,7 @@ def download(url, path, log_path, overwrite):
             if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
                 message = 'Downloading \'' + url + '\''
                 print(message)
-                log(log_path, message)
+                log(log_path, message, False)
 
                 r = requests.get(url)
                 with open(path, 'wb') as outfile:
@@ -43,7 +40,7 @@ def download(url, path, log_path, overwrite):
                 downloaded = True
 
     except Exception as e:
-        log(log_path, str(e))
+        log(log_path, str(e), True)
         print(e)
 
     return downloaded
