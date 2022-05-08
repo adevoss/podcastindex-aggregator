@@ -198,7 +198,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     if url != None and url != '':
         path = os.path.basename(url)
         path = os.path.join(episode_path, path)
-        generalfunctions.download(url, path, log_path, overwrite)
+        generalfunctions.download(url, path, log_path, True)
 
 def process_episodes(feedId, feedTitle, path, log_path, playlist_path, podcast_client_path, overwrite):
     # create directory for episodes
