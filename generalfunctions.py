@@ -21,6 +21,14 @@ def log(path, message, isError):
         logging.error(str(e))
         #print(e)
 
+def writetext(path, message):
+    try:
+        logging.basicConfig(level=logging.INFO, format="%(message)s", handlers=[logging.FileHandler(path)])
+        logging.info(message)
+
+    except Exception as e:
+        logging.error(str(e))
+
 def create_directory(path):
     if not os.path.isdir(path):
         os.makedirs(path)
