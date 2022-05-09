@@ -23,8 +23,15 @@ def log(path, message, isError):
 
 def writetext(path, message):
     try:
-        logging.basicConfig(level=logging.INFO, format="%(message)s", handlers=[logging.FileHandler(path)])
-        logging.info(message)
+        if os.path.isfile(path):
+            with open(path, "a") as outfile:
+                outfile.write("\n")
+        else:
+            with open(path, 'w') as outfile:
+                pass
+
+        with open(path, "a") as outfile:
+            outfile.write(message)
 
     except Exception as e:
         logging.error(str(e))
