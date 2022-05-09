@@ -170,7 +170,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
         enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
         downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite)
         if downloaded:
-           generalfunctions.log(playlist_path, enclosure_client_path)
+           generalfunctions.writetext(playlist_path, enclosure_client_path)
 
     # chapters
     url = episode["chaptersUrl"]
@@ -274,4 +274,5 @@ try:
 
 except Exception:
     message = str(Exception)
-    generalfunctions.log(log_path, message, True)
+    #generalfunctions.log(log_path, message, True)
+    print(message)
