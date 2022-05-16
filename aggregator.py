@@ -42,40 +42,45 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
                  process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
 
 def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process):
-    if podcast_data["id"][:1] != '#':
-       if podcast_to_process == "FEED":
-          feed = podcast(podcast_data["id"])["feed"]["url"]
-          print(podcast_data['title'] + ' ' + str(feed))
-       else:
-          # create directory for podcast
-          podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
-          podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
-          generalfunctions.create_directory(podcast_path)
+    try:
+        if podcast_data["id"][:1] != '#':
+           if podcast_to_process == "FEED":
+              feed = podcast(podcast_data["id"])["feed"]["url"]
+              print(podcast_data['title'] + ' ' + str(feed))
+           else:
+              # create directory for podcast
+              podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
+              podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
+              generalfunctions.create_directory(podcast_path)
 
-          # logging
-          message = 'Processing podcast \'' + podcast_data["title"] + '\''
-          print('==========================================================')
-          print(message)
-          print('==========================================================')
-          generalfunctions.log(log_path, message, False)
+              # logging
+              message = 'Processing podcast \'' + podcast_data["title"] + '\''
+              print('==========================================================')
+              print(message)
+              print('==========================================================')
+              generalfunctions.log(log_path, message, False)
 
-          # download feed assets
-          feed = podcast(podcast_data["id"])["feed"]
-          path = 'data.json'
-          path = os.path.join(podcast_path, path)
-          generalfunctions.write_file(path, json.dumps(feed, indent = 2))
+              # download feed assets
+              feed = podcast(podcast_data["id"])["feed"]
+              path = 'data.json'
+              path = os.path.join(podcast_path, path)
+              generalfunctions.write_file(path, json.dumps(feed, indent = 2))
 
-          # image
-          url = feed["image"]
-          path = os.path.basename(url)
-          path = os.path.join(podcast_path, path)
-          generalfunctions.download(url, path, log_path, overwrite)
+              # image
+              url = feed["image"]
+              path = os.path.basename(url)
+              path = os.path.join(podcast_path, path)
+              generalfunctions.download(url, path, log_path, overwrite)
 
-          # process episodes
-          process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
-    else:
-       message = 'Skipping podcast \'' + podcast_data["title"] + '\''
-       generalfunctions.log(log_path, message, False)
+              # process episodes
+              process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
+        else:
+           message = 'Skipping podcast \'' + podcast_data["title"] + '\''
+           generalfunctions.log(log_path, message, False)
+    except Exception as e:
+        message = e
+        generalfunctions.log(log_path, message, True)
+        print(message)
 
 def process_chapter(chapter, path, log_path, overwrite):
     # logging
