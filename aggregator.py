@@ -212,52 +212,58 @@ def process_episodes(feedId, feedTitle, path, log_path, playlist_path, podcast_c
         process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path)
 
 def aggregate(podcast_to_process):
-    datadir = configuration.config["directory"]["data"]
-    playlist_client_path = configuration.config["directory"]["playlist"]
-    podcastlist_file = configuration.config["file"]["podcastlist"]
+    try:
+        datadir = configuration.config["directory"]["data"]
+        playlist_client_path = configuration.config["directory"]["playlist"]
+        podcastlist_file = configuration.config["file"]["podcastlist"]
 
-    # create directory
-    log_path = os.path.join(datadir, configuration.config["directory"]["log"])
-    generalfunctions.create_directory(log_path)
-    playlist_path = os.path.join(datadir, configuration.config["directory"]["play"])
-    generalfunctions.create_directory(playlist_path)
+        # create directory
+        log_path = os.path.join(datadir, configuration.config["directory"]["log"])
+        generalfunctions.create_directory(log_path)
+        playlist_path = os.path.join(datadir, configuration.config["directory"]["play"])
+        generalfunctions.create_directory(playlist_path)
 
-    now = generalfunctions.now()
-    if podcast_to_process == "ALL":
-       dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
-    else:
-       dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+        now = generalfunctions.now()
+        if podcast_to_process == "ALL":
+           dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+        else:
+           dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
 
-    log_path = os.path.join(log_path, dateString+'.log')
-    playlist_path = os.path.join(playlist_path, dateString+'.m3u')
-    overwrite = False
+        log_path = os.path.join(log_path, dateString+'.log')
+        playlist_path = os.path.join(playlist_path, dateString+'.m3u')
+        overwrite = False
 
-    # logging
-    if podcast_to_process == "ALL":
-       message = 'Processing file \''+ podcastlist_file + '\'' + ' at ' + dateString
-       generalfunctions.log(log_path, message, False)
-    else:
-       message = 'Processing podcast \''+ podcast_to_process + '\'' + ' at ' + dateString
+        # logging
+        if podcast_to_process == "ALL":
+           message = 'Processing file \''+ podcastlist_file + '\'' + ' at ' + dateString
+           generalfunctions.log(log_path, message, False)
+        else:
+           message = 'Processing podcast \''+ podcast_to_process + '\'' + ' at ' + dateString
 
-    if podcast_to_process[0:4].lower() == "http":
-       message = 'Podcast feed \''+ podcast_to_process + '\'' + ' not in podcastindex'
-       podcast_to_process = search_podcast(podcast_to_process)
-    if podcast_to_process == "":
-       pass
-       #generalfunctions.log(log_path, message, False)
-    else:
-       data = generalfunctions.read_json(podcastlist_file, log_path)
-       process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
+        if podcast_to_process[0:4].lower() == "http":
+           message = 'Podcast feed \''+ podcast_to_process + '\'' + ' not in podcastindex'
+           podcast_to_process = search_podcast(podcast_to_process)
+        if podcast_to_process == "":
+           pass
+           #generalfunctions.log(log_path, message, False)
+        else:
+           data = generalfunctions.read_json(podcastlist_file, log_path)
+           process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
 
-       # logging
-       now = generalfunctions.now()
-       if podcast_to_process == "ALL":
-          dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
-          message = 'Done at ' + dateString
-          generalfunctions.log(log_path, message, False)
-       else:
-          dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
-          message = 'Done at ' + dateString
+           # logging
+           now = generalfunctions.now()
+           if podcast_to_process == "ALL":
+              dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
+              message = 'Done at ' + dateString
+              generalfunctions.log(log_path, message, False)
+           else:
+              dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+              message = 'Done at ' + dateString
+              generalfunctions.log(log_path, message, False)
+
+    except Exception as e:
+        message = e
+        #generalfunctions.log(log_path, message, True)
 
 
 try:
@@ -272,7 +278,7 @@ try:
        configuration.read() 
        aggregate(podcast_to_process)
 
-except Exception:
-    message = str(Exception)
+except Exception as e:
+    message = e
     #generalfunctions.log(log_path, message, True)
     print(message)
