@@ -6,6 +6,94 @@ import generalfunctions
 import sys
 import os
 import json
+import tempfile
+import requests
+import xml.etree.cElementTree as ET
+
+def livestream(feed, log_path):
+    now = generalfunctions.now()
+    nowstring = generalfunctions.format_dateYYYMMDDHHMM(now)
+
+    xml = loadXML_podcast(feed)
+    lits = get_liveitems(xml)
+    for lit in lits:
+        onair = False
+        start = get_liveitem_start(lit)
+        end = get_liveitem_end(lit)
+        title = get_liveitem_title(lit)
+        url = get_liveitem_url(lit)
+        message = title + ' at ' + start + ' on ' + url
+
+        if start != "":
+           startdatestring = generalfunctions.format_dateIS8601(start, "%Y%m%d%H%M")
+        if end != "":
+           enddatestring = generalfunctions.format_dateIS8601(end, "%Y%m%d%H%M")
+
+        if startdatestring != "":
+           if enddatestring == "":
+              if startdatestring <= nowstring:
+                 onair = True
+           else:
+              if enddatestring >= nowstring:
+                 onair = True
+
+        if onair:
+           generalfunctions.log(log_path, message, False)
+           print(message)
+
+def loadXML_podcast(feed):
+    response = requests.get(feed)
+    fd, path = tempfile.mkstemp()
+    try:
+       with os.fdopen(fd, 'wb') as tmp:
+          tmp.write(response.content)
+       tree = ET.parse(path)
+       root = tree.getroot()
+    finally:
+       os.remove(path)
+    return root
+
+def get_liveitems(root):
+    podcast = {'podcast': 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md'}
+    lit = ""
+    if root == "":
+       pass
+    else:
+       channel = root.find('channel')
+       lits = channel.findall('podcast:liveItem', podcast)
+    return lits
+
+def get_liveitem_start(lit):
+    start = ""
+    if lit == "":
+       pass
+    else:
+       start = lit.attrib.get('start')
+    return start
+
+def get_liveitem_end(lit):
+    end = ""
+    if lit == "":
+       pass
+    else:
+       end = lit.attrib.get('end')
+    return end
+
+def get_liveitem_title(lit):
+    title = ""
+    if lit == "":
+       pass
+    else:
+       title = lit.find('title').text
+    return title
+
+def get_liveitem_url(lit):
+    url = ""
+    if lit == "":
+       pass
+    else:
+       url = lit.find('enclosure').attrib.get('url')
+    return url
 
 def search_podcast(feed):
     url = "https://api.podcastindex.org/api/1.0/podcasts/byfeedurl?url=" + feed + "&pretty"
@@ -32,51 +120,56 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
     for podcast_data in data['podcastlist']:
         if podcast_to_process == "TITLE":
            print(podcast_data['title'] + ' ' + podcast_data['id'])
+
+        if podcast_to_process == "FEED":
+           feed = podcast(podcast_data["id"])["feed"]["url"]
+           print(podcast_data['title'] + ' ' + str(feed))
         else:
-           if podcast_to_process == "FEED" or podcast_to_process == "ALL":
-              process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
-           else:
-              if podcast_to_process == podcast_data['id'] or podcast_to_process == podcast_data['title']:
-                 message = 'Processing podcast \''+ podcast_data['title'] + '\'' + ' at ' + dateString
-                 generalfunctions.log(log_path, message, False)
+           if podcast_data["id"][:1] != '#':
+              if podcast_to_process == "ALL":
                  process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
+              else:
+                 if str(podcast_to_process) == podcast_data['id']:
+                    message = 'Processing podcast \'' + podcast_data['title'] + '\''
+                    generalfunctions.log(log_path, message, False)
+                    process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
+           else:
+              if podcast_to_process == "ALL":
+                 message = 'Skipping podcast \'' + podcast_data["title"] + '\''
+                 generalfunctions.log(log_path, message, False)
 
 def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process):
     try:
-        if podcast_data["id"][:1] != '#':
-           if podcast_to_process == "FEED":
-              feed = podcast(podcast_data["id"])["feed"]["url"]
-              print(podcast_data['title'] + ' ' + str(feed))
-           else:
-              # create directory for podcast
-              podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
-              podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
-              generalfunctions.create_directory(podcast_path)
+        # create directory for podcast
+        podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
+        podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
+        generalfunctions.create_directory(podcast_path)
 
-              # logging
-              message = 'Processing podcast \'' + podcast_data["title"] + '\''
-              print('==========================================================')
-              print(message)
-              print('==========================================================')
-              generalfunctions.log(log_path, message, False)
+        # logging
+        message = 'Processing podcast \'' + podcast_data["title"] + '\''
+        print('==========================================================')
+        print(message)
+        print('==========================================================')
+        generalfunctions.log(log_path, message, False)
 
-              # download feed assets
-              feed = podcast(podcast_data["id"])["feed"]
-              path = 'data.json'
-              path = os.path.join(podcast_path, path)
-              generalfunctions.write_file(path, json.dumps(feed, indent = 2))
+        feed = podcast(podcast_data["id"])["feed"]
 
-              # image
-              url = feed["image"]
-              path = os.path.basename(url)
-              path = os.path.join(podcast_path, path)
-              generalfunctions.download(url, path, log_path, overwrite)
+        # livestream
+        livestream(feed["url"], log_path)
 
-              # process episodes
-              process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
-        else:
-           message = 'Skipping podcast \'' + podcast_data["title"] + '\''
-           generalfunctions.log(log_path, message, False)
+        # download feed assets
+        path = 'data.json'
+        path = os.path.join(podcast_path, path)
+        generalfunctions.write_file(path, json.dumps(feed, indent = 2))
+
+        # image
+        url = feed["image"]
+        path = os.path.basename(url)
+        path = os.path.join(podcast_path, path)
+        generalfunctions.download(url, path, log_path, overwrite)
+
+        # process episodes
+        process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
     except Exception as e:
         message = e
         generalfunctions.log(log_path, message, True)
@@ -248,23 +341,25 @@ def aggregate(podcast_to_process):
         if podcast_to_process[0:4].lower() == "http":
            message = 'Podcast feed \''+ podcast_to_process + '\'' + ' not in podcastindex'
            podcast_to_process = search_podcast(podcast_to_process)
+
         if podcast_to_process == "":
            pass
            #generalfunctions.log(log_path, message, False)
         else:
-           data = generalfunctions.read_json(podcastlist_file, log_path)
-           process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
 
            # logging
            now = generalfunctions.now()
+           data = generalfunctions.read_json(podcastlist_file, log_path)
+           process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, podcast_to_process)
+
            if podcast_to_process == "ALL":
               dateString = generalfunctions.format_dateYYYMMDDHHMM(now)
               message = 'Done at ' + dateString
               generalfunctions.log(log_path, message, False)
-           else:
-              dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
-              message = 'Done at ' + dateString
-              generalfunctions.log(log_path, message, False)
+#           else:
+#              dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
+#              message = 'Done at ' + dateString
+#              generalfunctions.log(log_path, message, False)
 
     except Exception as e:
         message = e
@@ -287,3 +382,4 @@ except Exception as e:
     message = e
     #generalfunctions.log(log_path, message, True)
     print(message)
+

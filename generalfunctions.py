@@ -7,6 +7,7 @@ import requests
 import json
 import pathlib
 from datetime import datetime
+from dateutil import parser as DU
 
 
 def log(path, message, isError):
@@ -27,7 +28,7 @@ def writetext(path, message):
             with open(path, "a") as outfile:
                 outfile.write("\n")
         else:
-            with open(path, 'w') as outfile:
+            with open(path, 'w') as outfile: 
                 pass
 
         with open(path, "a") as outfile:
@@ -88,6 +89,11 @@ def file_extension(path):
 def file_name_noextension(path):
     name = os.path.splitext(path)[0]
     return name
+
+def format_dateIS8601(date, format):
+    dateISO8601 = DU.parse(date)
+    formatted = dateISO8601.strftime(format)
+    return formatted
 
 def format_dateYYYMMDDHHMM(date):
     format = "%Y%m%d%H%M"
