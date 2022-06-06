@@ -80,11 +80,12 @@ def get_liveitem_end(lit):
     return end
 
 def get_liveitem_title(lit):
-    title = ""
+    title = "-"
     if lit == "":
        pass
     else:
-       title = lit.find('title').text
+       if lit.find('title') != None:
+          title = lit.find('title').text
     return title
 
 def get_liveitem_url(lit):
