@@ -7,16 +7,21 @@ import requests
 import json
 import pathlib
 from datetime import datetime
-from dateutil import parser as DU
+from dateutil import parser as DP
+import pytz
 
 
-def log(path, message, isError):
+def log(path, message, isError, isDebug):
     try:
         logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.FileHandler(path)])
+
         if isError:
            logging.error(message)
         else:
-           logging.info(message)
+           if isDebug:
+              logging.debug(message)
+           else:
+              logging.info(message)
 
     except Exception as e:
         logging.error(str(e))
@@ -44,19 +49,22 @@ def create_directory(path):
 def download(url, path, log_path, overwrite):
     downloaded = False
     try:
-        if url != None:
-            if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
-                message = 'Downloading \'' + url + '\''
-                print(message)
-                log(log_path, message, False)
-
-                r = requests.get(url)
-                with open(path, 'wb') as outfile:
-                    outfile.write(r.content)
-                downloaded = True
+        if url != None and url !='':
+           if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
+              r = requests.get(url)
+              with open(path, 'wb') as outfile:
+                   outfile.write(r.content)
+              downloaded = True
+              message = 'Downloaded \'' + url + '\''
+              print(message)
+              log(log_path, message, False, False)
+        else:
+           message = "url is empty"
+           print(message)
+           log(log_path, message, True, False)
 
     except Exception as e:
-        log(log_path, str(e), True)
+        log(log_path, str(e), True, False)
         print(e)
 
     return downloaded
@@ -77,7 +85,7 @@ def read_json(path, log_path):
        json_text = json.loads(text)
 
     except Exception as e:
-        log(log_path, str(e))
+        log(log_path, str(e), True, False)
         print(e)
 
     return json_text
@@ -91,9 +99,13 @@ def file_name_noextension(path):
     return name
 
 def format_dateIS8601(date, format):
-    dateISO8601 = DU.parse(date)
+    dateISO8601 = string_to_date(date)
     formatted = dateISO8601.strftime(format)
     return formatted
+
+def string_to_date(date):
+    dateISO8601 = DP.parse(date)
+    return dateISO8601
 
 def format_dateYYYMMDDHHMM(date):
     format = "%Y%m%d%H%M"
@@ -104,6 +116,10 @@ def format_dateYYYMMDDHHMMSS(date):
     format = "%Y%m%d%H%M%S"
     formatted = date.strftime(format)
     return formatted
+
+def date_to_tz(date, tz):
+    dateTZ = date.astimezone(pytz.timezone(tz))
+    return dateTZ
 
 def now():
     date = datetime.now()
