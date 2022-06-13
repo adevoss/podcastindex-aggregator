@@ -12,51 +12,59 @@ import PIfunctions
 import configuration
 import generalfunctions
 
-def livestream(feed, playlist_path):
-    now = generalfunctions.now()
-    nowstring = generalfunctions.format_dateYYYMMDDHHMM(now)
-    tzpretty = "Europe/Amsterdam"
-    formatpretty = "%H:%M %m/%d/%Y"
+def livestream(feed, playlist_path, log_path):
+    try:
+       generalfunctions.log(log_path, feed, False, False)
+       now = generalfunctions.now()
+       nowstring = generalfunctions.format_dateYYYMMDDHHMM(now)
+       tzpretty = "Europe/Amsterdam"
+       formatpretty = "%H:%M %m/%d/%Y"
 
-    xml = loadXML_podcast(feed)
-    lits = get_liveitems(xml)
-    for lit in lits:
-        onair = False
-        start = get_liveitem_start(lit)
-        end = get_liveitem_end(lit)
-        title = get_liveitem_title(lit)
-        url = get_liveitem_url(lit)
+       xml = loadXML_podcast(feed)
+       lits = get_liveitems(xml)
+       if lits != None:
+          for lit in lits:
+              onair = False
+              start = get_liveitem_start(lit)
+              end = get_liveitem_end(lit)
+              title = get_liveitem_title(lit)
+              url = get_liveitem_url(lit)
 
-        if start != "":
-           startdate = generalfunctions.string_to_date(start)
-           startdateTZ = generalfunctions.date_to_tz(startdate, tzpretty)
-           startdatestring = generalfunctions.format_dateYYYMMDDHHMM(startdateTZ)
-           startdatepretty = startdateTZ.strftime(formatpretty)
-        if end != "":
-           enddate = generalfunctions.string_to_date(end)
-           enddateTZ = generalfunctions.date_to_tz(enddate, tzpretty)
-           enddatestring = generalfunctions.format_dateYYYMMDDHHMM(enddateTZ)
-           enddatepretty = str(enddateTZ)
-           enddatepretty = enddateTZ.strftime(formatpretty)
+              if start != "":
+                 startdate = generalfunctions.string_to_date(start)
+                 startdateTZ = generalfunctions.date_to_tz(startdate, tzpretty)
+                 startdatestring = generalfunctions.format_dateYYYMMDDHHMM(startdateTZ)
+                 startdatepretty = startdateTZ.strftime(formatpretty)
+              if end != "":
+                 enddate = generalfunctions.string_to_date(end)
+                 enddateTZ = generalfunctions.date_to_tz(enddate, tzpretty)
+                 enddatestring = generalfunctions.format_dateYYYMMDDHHMM(enddateTZ)
+                 enddatepretty = str(enddateTZ)
+                 enddatepretty = enddateTZ.strftime(formatpretty)
 
-        if startdatestring != "":
-           onair = True
-           if startdatestring > nowstring:
-              message = title + ' at ' + startdatepretty  + ' on ' + url
-           else:
-              message = title + ' now on ' + url
+              if startdatestring != "":
+                 if startdatestring > nowstring:
+                    message = title + ' at ' + startdatepretty  + ' on ' + url
+                 else:
+                    message = title + ' NOW on ' + url
 
-           if enddatestring != "":
-              if enddatestring >= nowstring:
-                 onair = True
-              else:
-                 onair = False
+              if enddatestring != "":
+                 if enddatestring >= nowstring:
+                    onair = True
+                 else:
+                    onair = False
 
-        if onair:
-           generalfunctions.writetext(playlist_path, message)
-           print(message)
+              if onair:
+                 generalfunctions.writetext(playlist_path, message)
+                 print(message)
+
+    except Exception as e:
+        message = feed + str(e)
+        generalfunctions.log(log_path, message, True, False)
+        print(message)
 
 def loadXML_podcast(feed):
+    root = None
     response = requests.get(feed)
     fd, path = tempfile.mkstemp()
     try:
@@ -70,12 +78,11 @@ def loadXML_podcast(feed):
 
 def get_liveitems(root):
     podcast = {'podcast': 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md'}
-    lit = ""
-    if root == "":
-       pass
-    else:
+    lits = None
+    if root != "" and root != None:
        channel = root.find('channel')
-       lits = channel.findall('podcast:liveItem', podcast)
+       if channel != "" and channel != None:
+          lits = channel.findall('podcast:liveItem', podcast)
     return lits
 
 def get_liveitem_start(lit):
@@ -148,11 +155,12 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose)
     if feedurl == feedurlPI:
        current = True
        message = title + ' - ' + feedurl
-       generalfunctions.log(log_path, message, False, False)
     else:
        message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
-       generalfunctions.writetext(playlist_path, message)
+
+    generalfunctions.log(log_path, message, False, False)
     if verbose:
+       generalfunctions.writetext(playlist_path, message)
        print(message)
 
 def episodes(feedId, log_path):
@@ -172,6 +180,9 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
 
            if podcast_to_process == "FEED":
               check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, True)
+
+           if podcast_to_process == "LIVE":
+              livestream(podcast_data['feed'], playlist_path, log_path)
            else:
               if podcast_to_process == "ALL":
                  check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, False)
@@ -201,7 +212,7 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
         feed = podcastdata(podcast_data["id"], log_path)["feed"]
 
         # livestream
-        livestream(feed["url"], playlist_path)
+        livestream(feed["url"], playlist_path, log_path)
 
         # download feed assets
         path = 'data.json'
@@ -393,7 +404,7 @@ try:
        podcast_to_process = "ALL"
 
     if podcast_to_process == "-h" or podcast_to_process == "--help":
-       print ("Usage: sys.argv[0] [ALL|TITLE|FEED|<podcastindex-id>|<feedurl>]")
+       print ("Usage: sys.argv[0] [ALL|TITLE|FEED|LIVE|<podcastindex-id>|<feedurl>]")
     else:
        configuration.read() 
        aggregate(podcast_to_process)
