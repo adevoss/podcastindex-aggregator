@@ -1,12 +1,14 @@
 {
     "podcastlist": [
         {
-            "id": "000000",
-            "title": "Podcast1",
-            "directory": "Subdirectory"
+            "id": "920666",
+            "feed": "http://mp3s.nashownotes.com/pc20rss.xml",
+            "title": "Podcasting20",
+            "directory": "Tech"
         },
         {
             "id": "000000",
+            "feed": "http://www.server.com/podcast/rss.xml",
             "title": "Podcast2",
             "directory": "Subdirectory"
         }
