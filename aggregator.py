@@ -12,7 +12,7 @@ import PIfunctions
 import configuration
 import generalfunctions
 
-def livestream(feed, playlist_path, log_path):
+def livestream(feed_url, feed_id, playlist_path, log_path):
     try:
        tzpretty = "Europe/Amsterdam"
        now = generalfunctions.now()
@@ -20,13 +20,26 @@ def livestream(feed, playlist_path, log_path):
        nowseconds = generalfunctions.to_epoch(nowTZ)
        nowstring = generalfunctions.format_dateYYYMMDDHHMM(nowTZ)
        formatpretty = "%H:%M %m/%d/%Y"
-       message = feed + ' not live now'
+       message = feed_url + ' not live now'
 
-       xml = loadXML_podcast(feed)
+
+       # Prepare for using 'live' endpoint
+
+       PIurl = configuration.config["podcastindex"]["url"]
+       url = PIurl  + "episodes/live"
+       lits = PIfunctions.request(url)['items']
+       for lit in lits:
+           if lit['feedId'] == feed_id:
+              message = "Testing live API: " + str(lit['title'])
+              generalfunctions.log(log_path, message, False, False)
+
+       # Prepare for using 'live' endpoint
+
+       xml = loadXML_podcast(feed_url)
        lits = get_liveitems(xml)
        if lits != None and len(lits) > 0:
           for lit in lits:
-              message = feed + ' not live now'
+              message = feed_url + ' not live now'
               onair = False
               start = get_liveitem_start(lit)
               end = get_liveitem_end(lit)
@@ -56,24 +69,17 @@ def livestream(feed, playlist_path, log_path):
               if startdatestring != "":
                  if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
                     message = title + ' at ' + startdatepretty  + ' on ' + url
-
-              if enddatestring != "":
-                 if enddatestring >= nowstring:
-                    message = title + ' NOW on ' + url
-                    onair = True
-                 else:
-                    onair = False
+                 if enddatestring != "":
+                    if startdatestring <= nowstring and enddatestring >= nowstring:
+                       message = title + ' NOW on ' + url
+                       onair = True
 
               if onair:
                  generalfunctions.writetext(playlist_path, message)
                  print(message)
-              #else:
-              #   print(message)
-       #else:
-       #   print(message)
 
     except Exception as e:
-        message = feed + str(e)
+        message = feed_url + str(e)
         generalfunctions.log(log_path, message, True, False)
         print(message)
 
@@ -172,7 +178,9 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose)
     else:
        message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
 
-    generalfunctions.log(log_path, message, False, False)
+    if not current:
+       generalfunctions.log(log_path, message, False, False)
+
     if verbose:
        generalfunctions.writetext(playlist_path, message)
        print(message)
@@ -201,7 +209,7 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
                  check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, verbose)
 
               if mode == "LIVE":
-                 livestream(podcast_data['feed'], playlist_path, log_path)
+                 livestream(podcast_data['feed'], podcast_data['id'], playlist_path, log_path)
 
               if mode == "PROCESS":
                  process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode)
@@ -228,7 +236,7 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
 
         # livestream
         if mode == "PROCESS" or mode == "LIVE":
-           livestream(feed["url"], playlist_path, log_path)
+           livestream(feed["url"], feed["id"], playlist_path, log_path)
 
         if mode == "PROCESS":
            # download feed assets
