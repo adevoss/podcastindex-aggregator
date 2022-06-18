@@ -5,12 +5,16 @@
         "secret":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     },
     "directory":{
-        "data":"/data/files/podcastindex",
+        "data":"/path/to/podcastfiles",
         "log":"LOG",
         "play":"PLAY",
-        "playlist":"/network/podcasts"
+        "playlist":"/path/to/use/in/playlist"
+    },
+    "settings":{
+        "numberOfEpisodes":"20",
+        "announceLive":"48"
     },
     "file":{
-        "podcastlist":"/etc/podcastindex/podcastlist.json"
+        "podcastlist":"/path/to/podcastlist.json"
     }
 }
