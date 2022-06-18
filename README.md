@@ -7,7 +7,7 @@ Example:
 /path/to/aggregator.py
 
 Options:
-/path/to/aggregator.py [ALL|'part of title']
+/path/to/aggregator.py [PROCESS|TITLE|FEED|LIVE ALL|<podcastindex-id>|<feedurl>]
 No options is the same as ALL
 
 configuration.json:
@@ -17,8 +17,9 @@ configuration.json:
 - log: Subdirectory of 'data' where log files are stored
 - play: Subdirectory of 'data' where playlist files are stored
 - playlist: Path to 'data' on the computer used to play the podcasts
-
 - podcastlist: path to the podcastlist.json file
+- numberOfEpisodes: maximum number of episodes to download
+- announceLive: a live show will only be shown in the playlist this number of hours before the start of the live show
 
 podcastlist.json:
 - id: search for the id on https://podcastindex.org. The id is at the end of the url.
