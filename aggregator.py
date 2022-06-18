@@ -14,10 +14,11 @@ import generalfunctions
 
 def livestream(feed, playlist_path, log_path):
     try:
-       generalfunctions.log(log_path, feed, False, False)
-       now = generalfunctions.now()
-       nowstring = generalfunctions.format_dateYYYMMDDHHMM(now)
        tzpretty = "Europe/Amsterdam"
+       now = generalfunctions.now()
+       nowTZ = generalfunctions.date_to_tz(now, tzpretty)
+       nowseconds = generalfunctions.to_epoch(nowTZ)
+       nowstring = generalfunctions.format_dateYYYMMDDHHMM(nowTZ)
        formatpretty = "%H:%M %m/%d/%Y"
        message = feed + ' not live now'
 
@@ -37,6 +38,14 @@ def livestream(feed, playlist_path, log_path):
                  startdateTZ = generalfunctions.date_to_tz(startdate, tzpretty)
                  startdatestring = generalfunctions.format_dateYYYMMDDHHMM(startdateTZ)
                  startdatepretty = startdateTZ.strftime(formatpretty)
+                 startdateseconds = generalfunctions.to_epoch(startdateTZ)
+
+                 live_announce_hours = int(configuration.config["settings"]["announceLive"])
+                 live_announce_seconds = live_announce_hours * 3600
+                 announceseconds = nowseconds + live_announce_seconds
+                 announcedate = generalfunctions.to_date(announceseconds)
+                 announcedateTZ = generalfunctions.date_to_tz(announcedate, tzpretty)
+
               if end != "":
                  enddate = generalfunctions.string_to_date(end)
                  enddateTZ = generalfunctions.date_to_tz(enddate, tzpretty)
@@ -45,13 +54,12 @@ def livestream(feed, playlist_path, log_path):
                  enddatepretty = enddateTZ.strftime(formatpretty)
 
               if startdatestring != "":
-                 if startdatestring > nowstring:
+                 if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
                     message = title + ' at ' + startdatepretty  + ' on ' + url
-                 else:
-                    message = title + ' NOW on ' + url
 
               if enddatestring != "":
                  if enddatestring >= nowstring:
+                    message = title + ' NOW on ' + url
                     onair = True
                  else:
                     onair = False
@@ -160,7 +168,7 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose)
     feedurlPI = search_podcast_by_id(feedId, log_path)
     if feedurl == feedurlPI:
        current = True
-       message = title + ' - ' + feedurl
+       message = 'Checking feed url of ' + title + ' - ' + feedurl
     else:
        message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
 

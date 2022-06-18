@@ -125,9 +125,13 @@ def now():
     date = datetime.now()
     return date
 
-def date_epoch(date):
+def to_epoch(date):
     epoch = date.timestamp()
     return epoch
+
+def to_date(epoch):
+    date = datetime.fromtimestamp(epoch)
+    return date
 
 def to_boolean(text):
     status = False
