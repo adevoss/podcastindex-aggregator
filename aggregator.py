@@ -22,18 +22,21 @@ def livestream(feed_url, feed_id, playlist_path, log_path):
        formatpretty = "%H:%M %m/%d/%Y"
        message = feed_url + ' not live now'
 
-
-       # Prepare for using 'live' endpoint
-
        PIurl = configuration.config["podcastindex"]["url"]
+       url = PIurl  + "episodes/live/byfeedid?id=" + str(feed_id) + "&pretty"
        url = PIurl  + "episodes/live"
-       lits = PIfunctions.request(url)['items']
-       for lit in lits:
-           if lit['feedId'] == feed_id:
-              message = "Testing live API: " + str(lit['title'])
-              generalfunctions.log(log_path, message, False, False)
-
-       # Prepare for using 'live' endpoint
+       lits = None
+       #lits = PIfunctions.request(url, log_path)
+       if lits != None:
+          status = generalfunctions.to_boolean(lits['status'])
+          if status:
+             lits = lits['items']
+             for lit in lits:
+                 if lit['feedId'] == feed_id:
+                    message = 'TESTING'
+                    #message = lit['title'] + ' at ' + startdatepretty  + ' on ' + url
+                    generalfunctions.log(log_path, message, False, False)
+                    print(message)
 
        xml = loadXML_podcast(feed_url)
        lits = get_liveitems(xml)
@@ -79,7 +82,7 @@ def livestream(feed_url, feed_id, playlist_path, log_path):
                  print(message)
 
     except Exception as e:
-        message = feed_url + str(e)
+        message = str(e)
         generalfunctions.log(log_path, message, True, False)
         print(message)
 
@@ -142,7 +145,7 @@ def search_podcast_by_feed(feed, log_path):
     PIurl = configuration.config["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedurl?url=" + feed + "&pretty"
     #generalfunctions.log(log_path, url, False, True)
-    search_result = PIfunctions.request(url)
+    search_result = PIfunctions.request(url, log_path)
     status = generalfunctions.to_boolean(search_result['status'])
     if status:
        podcast_id = search_result['feed']['id']
@@ -154,7 +157,7 @@ def search_podcast_by_id(feedId, log_path):
     PIurl = configuration.config["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedid?id=" + feedId + "&pretty"
     #generalfunctions.log(log_path, url, False, True)
-    search_result = PIfunctions.request(url)
+    search_result = PIfunctions.request(url, log_path)
     status = generalfunctions.to_boolean(search_result['status'])
     if status:
        feed_url = search_result['feed']['url']
@@ -166,7 +169,7 @@ def podcastdata(feedId, log_path):
     PIurl = configuration.config["podcastindex"]["url"]
     url = PIurl  + "podcasts/byfeedid?id=" + str(feedId)
     #generalfunctions.log(log_path, url, False, True)
-    feed_result = PIfunctions.request(url)
+    feed_result = PIfunctions.request(url, log_path)
     return feed_result
 
 def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose):
@@ -190,7 +193,7 @@ def episodes(feedId, log_path):
     PIurl = configuration.config["podcastindex"]["url"]
     url = PIurl + "episodes/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
     #generalfunctions.log(log_path, url, False, True)
-    episodes_result = PIfunctions.request(url)
+    episodes_result = PIfunctions.request(url, log_path)
     return episodes_result
 
 def process_file(data, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
