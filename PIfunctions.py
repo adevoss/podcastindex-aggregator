@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import configuration
+import generalfunctions
+
 from datetime import date
 import hashlib
 import json
@@ -42,12 +44,19 @@ def request_header():
     }
     return headers
 
-def request(url):
-    
-    # perform the actual post request
-    r = requests.post(url, headers=request_header())
+def request(url, log_path):
+    try:
+       result = None
+       # perform the actual post request
+       r = requests.post(url, headers=request_header())
 
-    # dump the contents (in a prettified json-format)
-    result = json.loads(r.text)
+       # dump the contents (in a prettified json-format)
+       result = json.loads(r.text)
+
+    except Exception as e:
+        message = 'Podcast Index API call: ' + str(e)
+        generalfunctions.log(log_path, message, True, False)
+        print(message)
+
     return result
 
