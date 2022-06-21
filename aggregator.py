@@ -188,15 +188,14 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose)
        generalfunctions.writetext(playlist_path, message)
        print(message)
 
-def episodes(feedId, log_path):
-    number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
+def episodes(feedId, number_of_episodes, log_path):
     PIurl = configuration.config["podcastindex"]["url"]
     url = PIurl + "episodes/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
     #generalfunctions.log(log_path, url, False, True)
     episodes_result = PIfunctions.request(url, log_path)
     return episodes_result
 
-def process_file(data, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
+def process_file(data, data_path, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
     for podcast_data in data['podcastlist']:
         feedurl = "-"
         verbose = False
@@ -215,13 +214,13 @@ def process_file(data, data_path, log_path, playlist_path, playlist_client_path,
                  livestream(podcast_data['feed'], podcast_data['id'], playlist_path, log_path)
 
               if mode == "PROCESS":
-                 process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode)
+                 process_podcast(podcast_data, number_of_episodes, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode)
         else:
            if podcast_to_process == "ALL":
               message = 'Skipping podcast \'' + podcast_data["title"] + '\''
               generalfunctions.log(log_path, message, False, False)
 
-def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode):
+def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode):
     try:
         # create directory for podcast
         podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
@@ -254,7 +253,7 @@ def process_podcast(podcast_data, data_path, log_path, playlist_path, playlist_c
            downloaded = generalfunctions.download(url, path, log_path, overwrite)
 
            # process episodes
-           process_episodes(podcast_data["id"], podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
+           process_episodes(podcast_data["id"], number_of_episodes, podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
 
     except Exception as e:
         message = e
@@ -376,18 +375,18 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
         path = os.path.join(episode_path, path)
         generalfunctions.download(url, path, log_path, True)
 
-def process_episodes(feedId, feedTitle, path, log_path, playlist_path, podcast_client_path, overwrite):
+def process_episodes(feedId, number_of_episodes, feedTitle, path, log_path, playlist_path, podcast_client_path, overwrite):
     # create directory for episodes
     path = os.path.join(path, 'Episodes')
     podcast_client_path = os.path.join(podcast_client_path, 'Episodes')
     generalfunctions.create_directory(path)
 
-    episodes_data = episodes(feedId, log_path)["items"]
+    episodes_data = episodes(feedId, number_of_episodes, log_path)["items"]
     # print(json.dumps(episodes_data, indent = 2))
     for (episode) in episodes_data:
         process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path)
 
-def aggregate(mode, podcast_to_process):
+def aggregate(mode, podcast_to_process, number_of_episodes):
     try:
         datadir = configuration.config["directory"]["data"]
         playlist_client_path = configuration.config["directory"]["playlist"]
@@ -418,7 +417,7 @@ def aggregate(mode, podcast_to_process):
 
         now = generalfunctions.now()
         data = generalfunctions.read_json(podcastlist_file, log_path)
-        process_file(data, datadir, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
+        process_file(data, datadir, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
     except Exception as e:
         message = e
@@ -429,6 +428,12 @@ def aggregate(mode, podcast_to_process):
 try:
     mode = "PROCESS"
     podcast_to_process = "ALL"
+    number_of_episodes = 0
+
+    if len(sys.argv) == 4:
+       mode = sys.argv[1]
+       podcast_to_process = sys.argv[2]
+       number_of_episodes = sys.argv[3]
 
     if len(sys.argv) == 3:
        mode = sys.argv[1]
@@ -439,14 +444,18 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ("Usage: sys.argv[0] [PROCESS|TITLE|FEED|LIVE <podcastindex-id>|<feedurl>]")
+       print ("Usage: sys.argv[0] [PROCESS|TITLE|FEED|LIVE <podcastindex-id>|<feedurl>] [numberOfEpisodes]")
     else:
        configuration.read() 
        if mode == "PROCESS" or mode == "TITLE" or mode == "FEED" or mode == "LIVE":
-          aggregate(mode, podcast_to_process)
+          if int(number_of_episodes) == 0:
+             number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
+
+          if int(number_of_episodes) > 0:
+             aggregate(mode, podcast_to_process, int(number_of_episodes))
 
 except Exception as e:
     message = e
+    message = 'Function: ' + function.__name__ + ': ' + str(e)
     generalfunctions.log(log_path, message, True, False)
     print(message)
-
