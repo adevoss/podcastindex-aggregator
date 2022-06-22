@@ -12,7 +12,7 @@ import PIfunctions
 import configuration
 import generalfunctions
 
-def livestream(feed_url, feed_id, playlist_path, log_path):
+def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
     try:
        tzpretty = "Europe/Amsterdam"
        now = generalfunctions.now()
@@ -49,6 +49,11 @@ def livestream(feed_url, feed_id, playlist_path, log_path):
               title = get_liveitem_title(lit)
               url = get_liveitem_url(lit)
 
+              if title == "":
+                 title = feed_title
+              if url == "":
+                 url = "<not set>"
+
               if start != "":
                  startdate = generalfunctions.string_to_date(start)
                  startdateTZ = generalfunctions.date_to_tz(startdate, tzpretty)
@@ -72,6 +77,7 @@ def livestream(feed_url, feed_id, playlist_path, log_path):
               if startdatestring != "":
                  if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
                     message = title + ' at ' + startdatepretty  + ' on ' + url
+                    onair = True
                  if enddatestring != "":
                     if startdatestring <= nowstring and enddatestring >= nowstring:
                        message = title + ' NOW on ' + url
@@ -110,34 +116,26 @@ def get_liveitems(root):
 
 def get_liveitem_start(lit):
     start = ""
-    if lit == "":
-       pass
-    else:
+    if lit != "":
        start = lit.attrib.get('start')
     return start
 
 def get_liveitem_end(lit):
     end = ""
-    if lit == "":
-       pass
-    else:
+    if lit != "":
        end = lit.attrib.get('end')
     return end
 
 def get_liveitem_title(lit):
-    title = "-"
-    if lit == "":
-       pass
-    else:
+    title = ""
+    if lit != "":
        if lit.find('title') != None:
           title = lit.find('title').text
     return title
 
 def get_liveitem_url(lit):
     url = ""
-    if lit == "":
-       pass
-    else:
+    if lit != "":
        url = lit.find('enclosure').attrib.get('url')
     return url
 
@@ -211,7 +209,7 @@ def process_file(data, data_path, number_of_episodes, log_path, playlist_path, p
                  check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, verbose)
 
               if mode == "LIVE":
-                 livestream(podcast_data['feed'], podcast_data['id'], playlist_path, log_path)
+                 livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, log_path)
 
               if mode == "PROCESS":
                  process_podcast(podcast_data, number_of_episodes, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode)
@@ -238,7 +236,7 @@ def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playl
 
         # livestream
         if mode == "PROCESS" or mode == "LIVE":
-           livestream(feed["url"], feed["id"], playlist_path, log_path)
+           livestream(feed["url"], feed["id"], feed["title"], playlist_path, log_path)
 
         if mode == "PROCESS":
            # download feed assets
