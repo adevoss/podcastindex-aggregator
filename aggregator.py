@@ -44,11 +44,13 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
           for lit in lits:
               message = feed_url + ' not live now'
               onair = False
+              status = get_liveitem_status(lit)
               start = get_liveitem_start(lit)
               end = get_liveitem_end(lit)
               title = get_liveitem_title(lit)
               url = get_liveitem_url(lit)
 
+              status = status.lower()
               if title == "":
                  title = feed_title
               if url == "":
@@ -79,7 +81,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
                     message = title + ' at ' + startdatepretty  + ' on ' + url
                     onair = True
                  if enddatestring != "":
-                    if startdatestring <= nowstring and enddatestring >= nowstring:
+                    if status == "live" or (startdatestring <= nowstring and enddatestring >= nowstring):
                        message = title + ' NOW on ' + url
                        onair = True
 
@@ -113,6 +115,12 @@ def get_liveitems(root):
        if channel != "" and channel != None:
           lits = channel.findall('podcast:liveItem', podcast)
     return lits
+
+def get_liveitem_status(lit):
+    status = ""
+    if lit != "":
+       status = lit.attrib.get('status')
+    return status
 
 def get_liveitem_start(lit):
     start = ""
