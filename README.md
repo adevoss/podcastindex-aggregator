@@ -20,6 +20,8 @@ configuration.json:
 - podcastlist: path to the podcastlist.json file
 - numberOfEpisodes: maximum number of episodes to download
 - announceLive: a live show will only be shown in the playlist this number of hours before the start of the live show
+- leadinLive: a live show will only be shown in the playlist as live NOW when status is 'live' and the current time is this amount of minutes before 'start'
+- leadoutLive: a live show will only be shown in the playlist as live NOW when status is 'live' and the current time is this amount of minutes after 'end'
 
 podcastlist.json:
 - id: search for the id on https://podcastindex.org. The id is at the end of the url.

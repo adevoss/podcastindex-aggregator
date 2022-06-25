@@ -20,6 +20,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
        nowseconds = generalfunctions.to_epoch(nowTZ)
        nowstring = generalfunctions.format_dateYYYMMDDHHMM(nowTZ)
        formatpretty = "%H:%M %m/%d/%Y"
+       tomorrowTZ = generalfunctions.tomorrow()
        message = feed_url + ' not live now'
 
        PIurl = configuration.config["podcastindex"]["url"]
@@ -69,6 +70,9 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
                  announcedate = generalfunctions.to_date(announceseconds)
                  announcedateTZ = generalfunctions.date_to_tz(announcedate, tzpretty)
 
+                 live_leadin = -int(configuration.config["settings"]["leadinLive"])
+                 live_leadout = int(configuration.config["settings"]["leadoutLive"])
+
               if end != "":
                  enddate = generalfunctions.string_to_date(end)
                  enddateTZ = generalfunctions.date_to_tz(enddate, tzpretty)
@@ -79,9 +83,15 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
               if startdatestring != "":
                  if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
                     message = title + ' at ' + startdatepretty  + ' on ' + url
+                    if startdateTZ.date() == nowTZ.date():
+                       message = title + ' today at ' + str(startdateTZ.time()) + ' on ' + url
+                    if startdateTZ.date() == tomorrowTZ.date():
+                       message = title + ' tomorrow at ' + str(startdateTZ.time()) + ' on ' + url
                     onair = True
                  if enddatestring != "":
-                    if status == "live" or (startdatestring <= nowstring and enddatestring >= nowstring):
+                    leadindateTZ = generalfunctions.deltaminutes(startdateTZ, live_leadin)
+                    leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
+                    if status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ):
                        message = title + ' NOW on ' + url
                        onair = True
 
