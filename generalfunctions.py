@@ -6,7 +6,8 @@ import os
 import requests
 import json
 import pathlib
-from datetime import datetime
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 from dateutil import parser as DP
 import pytz
 
@@ -123,6 +124,14 @@ def date_to_tz(date, tz):
 
 def now():
     date = datetime.now()
+    return date
+
+def tomorrow():
+    date = now() + timedelta(1)
+    return date
+
+def deltaminutes(date, delta):
+    date = date + relativedelta(minutes=delta)
     return date
 
 def to_epoch(date):
