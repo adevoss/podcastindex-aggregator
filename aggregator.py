@@ -5,7 +5,6 @@ import os
 import json
 import tempfile
 import requests
-import subprocess
 
 import xml.etree.cElementTree as ET
 
