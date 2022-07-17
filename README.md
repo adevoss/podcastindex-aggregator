@@ -7,8 +7,22 @@ Example:
 /path/to/aggregator.py
 
 Options:
-/path/to/aggregator.py [PROCESS|TITLE|FEED|LIVE ALL|<podcastindex-id>|<feedurl>]
-No options is the same as ALL
+/path/to/aggregator.py [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes]
+No options is the same as PROCESS ALL
+
+LIST - Show list of podcasts in your podcastlist
+CHECK - Compares feed url in config file to feed url in podcastindex
+LIVE - Generates a playlist file for live podcasts
+PROCESS - Download podcasts
+
+Example:
+/path/to/boost.py 920666 90 1 1000 'Boostmessage'
+
+Options:
+/path/to/boost.py VALUE|BOOST <podcastindex-id> <episode nr> [<timestamp> <amount> <message>]
+
+VALUE - Show valueblock of podcast episode
+BOOST - Send boostagram
 
 configuration.json:
 - podcastindex: use your key and secret
@@ -26,5 +40,6 @@ configuration.json:
 podcastlist.json:
 - id: search for the id on https://podcastindex.org. The id is at the end of the url.
 - title: Used for creating directory.
+- feed: feed of podcast to avoid api call with hivewatcher
 - directory: Subdirectory of 'data' (see above) to store the podcast in.
 

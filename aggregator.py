@@ -5,6 +5,7 @@ import os
 import json
 import tempfile
 import requests
+import subprocess
 
 import xml.etree.cElementTree as ET
 
@@ -215,15 +216,15 @@ def process_file(data, data_path, number_of_episodes, log_path, playlist_path, p
     for podcast_data in data['podcastlist']:
         feedurl = "-"
         verbose = False
-        if mode == "FEED":
+        if mode == "CHECK":
            verbose = True
 
         if podcast_data["id"][:1] != '#':
            if podcast_to_process == "ALL" or str(podcast_to_process) == podcast_data["id"] or str(podcast_to_process) == podcast_data["feed"]:
-              if mode == "TITLE":
+              if mode == "LIST":
                  print(podcast_data['title'] + ' ' + podcast_data['id'])
 
-              if mode == "FEED" or mode == "PROCESS":
+              if mode == "CHECK" or mode == "PROCESS":
                  check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, verbose)
 
               if mode == "LIVE":
@@ -460,13 +461,12 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ("Usage: sys.argv[0] [PROCESS|TITLE|FEED|LIVE <podcastindex-id>|<feedurl>] [numberOfEpisodes]")
+       print ('Usage: ' + sys.argv[0] + ' [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes]')
     else:
        configuration.read() 
-       if mode == "PROCESS" or mode == "TITLE" or mode == "FEED" or mode == "LIVE":
+       if mode == "PROCESS" or mode == "LIST" or mode == "CHECK" or mode == "LIVE":
           if int(number_of_episodes) == 0:
              number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
-
           if int(number_of_episodes) > 0:
              aggregate(mode, podcast_to_process, int(number_of_episodes))
 
