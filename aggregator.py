@@ -349,6 +349,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     url = episode["image"]
     if url != None and url != '':
         path = os.path.basename(url)
+        path = path.split('?')[0]
         path = os.path.join(episode_path, path)
         generalfunctions.download(url, path, log_path, overwrite)
 
