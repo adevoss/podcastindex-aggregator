@@ -266,6 +266,7 @@ def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playl
            url = feed["image"]
            path = os.path.basename(url)
            path = os.path.join(podcast_path, path)
+           path = path.split('?')[0]
            downloaded = generalfunctions.download(url, path, log_path, overwrite)
 
            # process episodes
