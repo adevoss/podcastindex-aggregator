@@ -56,7 +56,7 @@ def download(url, path, log_path, overwrite):
               with open(path, 'wb') as outfile:
                    outfile.write(r.content)
               downloaded = True
-              message = 'Downloaded \'' + basename(path) + '\''
+              message = 'Downloaded \'' + os.path.basename(path) + '\''
               print(message)
               log(log_path, message, False, False)
         else:
