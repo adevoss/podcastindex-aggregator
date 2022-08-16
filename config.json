@@ -1,8 +1,8 @@
 {
     "podcastindex":{
-        "url":"https://api.podcastindex.org/api/1.0",
-        "key":"xxxxxxxxxxxxxxxxxxxx",
-        "secret":"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        "url":"https://api.podcastindex.org/api/1.0/",
+        "key":"xxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "secret":"xxxxxxxxxxxxxxxxxxxxxxx"
     },
     "directory":{
         "data":"/path/to/podcastfiles",
@@ -11,10 +11,16 @@
         "playlist":"/path/to/use/in/playlist"
     },
     "settings":{
+        "timezone":"xxxx/xxxxx",
+        "formatdatetime":"%H:%M %m/%d/%Y",
+        "formattime":"%H:%M",
         "numberOfEpisodes":"20",
-        "announceLive":"48"
+        "announceLive":"24",
+        "leadinLive":"15",
+        "leadoutLive":"15"
     },
     "file":{
-        "podcastlist":"/path/to/podcastlist.json"
+        "podcastlist":"/path/to/podcastlist.json",
+        "sendboostagram":"/path/to/boost.sh"
     }
 }
