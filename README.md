@@ -15,15 +15,6 @@ CHECK - Compares feed url in config file to feed url in podcastindex
 LIVE - Generates a playlist file for live podcasts
 PROCESS - Download podcasts
 
-Example:
-/path/to/boost.py 920666 90 1 1000 'Boostmessage'
-
-Options:
-/path/to/boost.py VALUE|BOOST <podcastindex-id> <episode nr> [<timestamp> <amount> <message>]
-
-VALUE - Show valueblock of podcast episode
-BOOST - Send boostagram
-
 configuration.json:
 - podcastindex: use your key and secret
 

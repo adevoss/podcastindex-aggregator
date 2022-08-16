@@ -20,7 +20,6 @@
         "leadoutLive":"15"
     },
     "file":{
-        "podcastlist":"/path/to/podcastlist.json",
-        "sendboostagram":"/path/to/boost.sh"
+        "podcastlist":"/path/to/podcastlist.json"
     }
 }
