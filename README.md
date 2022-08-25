@@ -11,6 +11,7 @@ Options:
 No options is the same as PROCESS ALL
 
 LIST - Show list of podcasts in your podcastlist
+SEARCH - Search podcasts
 CHECK - Compares feed url in config file to feed url in podcastindex
 LIVE - Generates a playlist file for live podcasts
 PROCESS - Download podcasts
