@@ -12,6 +12,23 @@ import PIfunctions
 import configuration
 import generalfunctions
 
+def search_podcast(query, log_path):
+    feeds = []
+    PIurl = configuration.config["podcastindex"]["url"]
+    url = PIurl  + 'search/byterm?q=' + query + "&pretty"
+    result = PIfunctions.request(url, log_path)
+
+    count = result['count']
+    if count > 0:
+        for feed in result['feeds']:
+            feeds.append(feed)
+    else:
+        print('No match')
+
+    for feed in feeds:
+        print(feed['title'] + ' ' + str(feed['id']))
+    return feeds
+
 def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
     try:
        tzpretty = "Europe/Amsterdam"
@@ -435,7 +452,10 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
         now = generalfunctions.now()
         data = generalfunctions.read_json(podcastlist_file, log_path)
-        process_file(data, datadir, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
+        if mode == 'SEARCH':
+           search_podcast(str(podcast_to_process), log_path)
+        else:
+           process_file(data, datadir, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
     except Exception as e:
         message = e
@@ -462,14 +482,14 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ('Usage: ' + sys.argv[0] + ' [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes]')
+       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes]')
     else:
        configuration.read() 
-       if mode == "PROCESS" or mode == "LIST" or mode == "CHECK" or mode == "LIVE":
+       if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
           if int(number_of_episodes) == 0:
              number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
-          if int(number_of_episodes) > 0:
-             aggregate(mode, podcast_to_process, int(number_of_episodes))
+
+          aggregate(mode, podcast_to_process, number_of_episodes)
 
 except Exception as e:
     message = e
