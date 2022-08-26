@@ -26,7 +26,9 @@ def search_podcast(query, log_path):
         print('No match')
 
     for feed in feeds:
-        print(feed['title'] + ' ' + str(feed['id']))
+        print(feed['title'])
+        print('Podcasting 2.0 id: ' + str(feed['id']))
+        print(feed['url'])
     return feeds
 
 def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
