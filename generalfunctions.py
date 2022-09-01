@@ -51,14 +51,20 @@ def download(url, path, log_path, overwrite):
     downloaded = False
     try:
         if url != None and url !='':
-           if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
-              r = requests.get(url)
-              with open(path, 'wb') as outfile:
-                   outfile.write(r.content)
-              downloaded = True
-              message = 'Downloaded \'' + os.path.basename(path) + '\''
+           if path != None and path !='':
+              path = sanitize(path)
+              if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
+                 r = requests.get(url)
+                 with open(path, 'wb') as outfile:
+                      outfile.write(r.content)
+                 downloaded = True
+                 message = 'Downloaded \'' + os.path.basename(path) + '\''
+                 print(message)
+                 log(log_path, message, False, False)
+           else:
+              message = "path is empty"
               print(message)
-              log(log_path, message, False, False)
+              log(log_path, message, True, False)
         else:
            message = "url is empty"
            print(message)
@@ -69,6 +75,20 @@ def download(url, path, log_path, overwrite):
         print(e)
 
     return downloaded
+
+def sanitize(path):
+    sanitized = os.path.join(sanitize_path(os.path.dirname(path), False), sanitize_path(os.path.basename(path), True))
+    return sanitized
+
+def sanitize_path(pathFileName, isFileName):
+    sanitized = pathFileName
+    illegal = '{}\\'
+    for char in illegal:
+        sanitized = sanitized.replace(char, '')
+    if isFileName:
+        sanitized = sanitized.replace('/', '')
+        sanitized = sanitized.replace('..', '.')
+    return sanitized
 
 def write_file(path, text):
     with open(path, "w") as outfile: 
