@@ -376,14 +376,19 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     # enclosure url
     url = episode["enclosureUrl"]
     if url != None and url != '':
-        url = episode["enclosureUrl"]
-        enclosure_file = os.path.basename(url)
-        enclosure_file = enclosure_file.split('?')[0]
-        enclosure_path = os.path.join(episode_path, enclosure_file)
-        enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
-        downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite)
-        if downloaded:
-           generalfunctions.writetext(playlist_path, enclosure_client_path)
+       url = episode["enclosureUrl"]
+       op3 = bool(configuration.config["op3"]["enable"])
+       if not op3:
+          op3url = str(configuration.config["op3"]["url"])
+          url = url.replace(op3url, '')
+
+       enclosure_file = os.path.basename(url)
+       enclosure_file = enclosure_file.split('?')[0]
+       enclosure_path = os.path.join(episode_path, enclosure_file)
+       enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
+       downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite)
+       if downloaded:
+          generalfunctions.writetext(playlist_path, enclosure_client_path)
 
     # chapters
     url = episode["chaptersUrl"]
