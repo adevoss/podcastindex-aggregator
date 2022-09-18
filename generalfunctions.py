@@ -54,13 +54,13 @@ def download(url, path, log_path, overwrite):
            if path != None and path !='':
               path = sanitize(path)
               if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
+                 message = 'Downloading \'' + os.path.basename(path) + '\' ...'
+                 print(message)
+                 log(log_path, message, False, False)
                  r = requests.get(url)
                  with open(path, 'wb') as outfile:
                       outfile.write(r.content)
                  downloaded = True
-                 message = 'Downloaded \'' + os.path.basename(path) + '\''
-                 print(message)
-                 log(log_path, message, False, False)
            else:
               message = "path is empty"
               print(message)
@@ -96,16 +96,22 @@ def write_file(path, text):
 
 def read_json(path, log_path):
     try:
-       json_text = ''
+       json_text = None
        with open(path, 'r', encoding="utf-8-sig") as openfile: 
             text = openfile.read()
             openfile.close()
 
        # strip BOM character
-       json_text = text.lstrip('\ufeff')
-       json_text = json.loads(text)
+       text = text.lstrip('\ufeff')
+
+       if '<!DOCTYPE HTML>' in text:
+          message = 'Text is HTML not JSON.'
+          print(message)
+       else:
+          json_text = json.loads(text)
 
     except Exception as e:
+        json_text = None
         log(log_path, str(e), True, False)
         print(e)
 

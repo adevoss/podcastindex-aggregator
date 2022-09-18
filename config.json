@@ -4,6 +4,10 @@
         "key":"xxxxxxxxxxxxxxxxxxxxxxxxxx",
         "secret":"xxxxxxxxxxxxxxxxxxxxxxx"
     },
+    "op3":{
+        "url":"https://op3.dev/e/",
+        "enable":1
+    },
     "directory":{
         "data":"/path/to/podcastfiles",
         "log":"LOG",
