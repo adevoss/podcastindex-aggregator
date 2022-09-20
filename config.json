@@ -4,6 +4,13 @@
         "key":"xxxxxxxxxxxxxxxxxxxxxxxxxx",
         "secret":"xxxxxxxxxxxxxxxxxxxxxxx"
     },
+    "querystringtracking":{
+        "enable":1
+    },
+    "podtrac":{
+        "url":"https://www.podtrac.com/pts/redirect.mp3/",
+        "enable":1
+    },
     "op3":{
         "url":"https://op3.dev/e/",
         "enable":1

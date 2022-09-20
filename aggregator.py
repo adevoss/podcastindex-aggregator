@@ -286,7 +286,8 @@ def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playl
            path = os.path.basename(url)
            path = os.path.join(podcast_path, path)
            path = path.split('?')[0]
-           downloaded = generalfunctions.download(url, path, log_path, overwrite)
+           querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+           downloaded = generalfunctions.download(url, path, log_path, overwrite, querystringtracking)
 
            # process episodes
            process_episodes(podcast_data["id"], number_of_episodes, podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
@@ -323,7 +324,8 @@ def process_chapter(chapter, path, log_path, overwrite):
         #file_extention = file_extention.lower()
         if file_extension == '.png' or file_extension == '.jpg' or file_extension == '.jpeg':
             path = os.path.join(chapter_path, path)
-            generalfunctions.download(url, path, log_path, overwrite)
+            querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+            generalfunctions.download(url, path, log_path, overwrite, querystringtracking)
 
     # url
     if "url" in chapter:
@@ -341,7 +343,8 @@ def process_chapter(chapter, path, log_path, overwrite):
                 path = os.path.join(chapter_path, file_name+'-'+dateFormatted+file_extension)
 
             path = os.path.join(chapter_path, path)
-            generalfunctions.download(url, path, log_path, overwrite)
+            querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+            generalfunctions.download(url, path, log_path, overwrite, querystringtracking)
 
 
 def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path):
@@ -371,13 +374,18 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
         path = os.path.basename(url)
         path = path.split('?')[0]
         path = os.path.join(episode_path, path)
-        generalfunctions.download(url, path, log_path, overwrite)
+        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+        generalfunctions.download(url, path, log_path, overwrite, querystringtracking)
 
     # enclosure url
     url = episode["enclosureUrl"]
     if url != None and url != '':
        url = episode["enclosureUrl"]
+       podtrac = bool(configuration.config["podtrac"]["enable"])
        op3 = bool(configuration.config["op3"]["enable"])
+       if not podtrac:
+          podtracurl = str(configuration.config["podtrac"]["url"])
+          url = url.replace(podtracurl, '')
        if not op3:
           op3url = str(configuration.config["op3"]["url"])
           url = url.replace(op3url, '')
@@ -386,7 +394,8 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
        enclosure_file = enclosure_file.split('?')[0]
        enclosure_path = os.path.join(episode_path, enclosure_file)
        enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
-       downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite)
+       querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+       downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite, querystringtracking)
        if downloaded:
           generalfunctions.writetext(playlist_path, enclosure_client_path)
 
@@ -395,7 +404,8 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     if url != None and url != '':
         path = os.path.basename(url)
         path = os.path.join(episode_path, path)
-        downloaded = generalfunctions.download(url, path, log_path, True)
+        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+        downloaded = generalfunctions.download(url, path, log_path, True, querystringtracking)
         if downloaded:
            chapter_file = path
 
@@ -415,7 +425,8 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     if url != None and url != '':
         path = os.path.basename(url)
         path = os.path.join(episode_path, path)
-        generalfunctions.download(url, path, log_path, True)
+        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
+        generalfunctions.download(url, path, log_path, True, querystringtracking)
 
 def process_episodes(feedId, number_of_episodes, feedTitle, path, log_path, playlist_path, podcast_client_path, overwrite):
     # create directory for episodes
