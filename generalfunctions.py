@@ -47,10 +47,12 @@ def create_directory(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
-def download(url, path, log_path, overwrite):
+def download(url, path, log_path, overwrite, querystringtracking):
     downloaded = False
     try:
         if url != None and url !='':
+           if not querystringtracking:
+              url = url.split('?')[0]
            if path != None and path !='':
               path = sanitize(path)
               if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
@@ -106,7 +108,7 @@ def read_json(path, log_path):
 
        if '<!DOCTYPE HTML>' in text:
           message = 'Text is HTML not JSON.'
-          print(message)
+          log(log_path, message, True, False)
        else:
           json_text = json.loads(text)
 

@@ -18,7 +18,9 @@ PROCESS - Download podcasts
 
 configuration.json:
 - podcastindex: use your key and secret
-- enable: use op3 or not
+- enable: use querystring tracking or not
+- enable: use podtrac tracking or not
+- enable: use op3 tracking or not
 - data: Directory where the podcasts are stored
 - log: Subdirectory of 'data' where log files are stored
 - play: Subdirectory of 'data' where playlist files are stored
