@@ -305,8 +305,10 @@ def process_chapter(chapter, path, log_path, overwrite):
     generalfunctions.log(log_path, message, False, False)
 
     # create directory for chapter
+    chapter_title = generalfunctions.sanitize_path(chapter_title, False)
     chapter_directory = str(chapter["startTime"]) + '-' + chapter_title
     path = os.path.join(path, chapter_directory)
+    print(path)
     generalfunctions.create_directory(path)
     chapter_path = path
 
@@ -349,6 +351,7 @@ def process_chapter(chapter, path, log_path, overwrite):
 
 def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path):
     title = episode["title"]
+    title = generalfunctions.sanitize_path(title, False)
 
     # logging
     message = 'Processing episode \'' + title + '\''
@@ -385,10 +388,11 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
        op3 = bool(configuration.config["op3"]["enable"])
        if not podtrac:
           podtracurl = str(configuration.config["podtrac"]["url"])
-          url = url.replace(podtracurl, '')
+          url = url.replace(podtracurl, 'https://')
        if not op3:
           op3url = str(configuration.config["op3"]["url"])
-          url = url.replace(op3url, '')
+          url = url.replace(op3url, 'https://')
+
 
        enclosure_file = os.path.basename(url)
        enclosure_file = enclosure_file.split('?')[0]

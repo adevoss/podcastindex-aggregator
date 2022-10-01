@@ -51,11 +51,11 @@ def download(url, path, log_path, overwrite, querystringtracking):
     downloaded = False
     try:
         if url != None and url !='':
+           path = sanitize(path)
            if not querystringtracking:
               url = url.split('?')[0]
            if path != None and path !='':
-              path = sanitize(path)
-              if (os.path.isfile(path) and overwrite) or not os.path.isfile(path):
+              if (os.path.exists(path) and overwrite) or not os.path.exists(path):
                  message = 'Downloading \'' + os.path.basename(path) + '\' ...'
                  print(message)
                  log(log_path, message, False, False)
@@ -82,14 +82,19 @@ def sanitize(path):
     sanitized = os.path.join(sanitize_path(os.path.dirname(path), False), sanitize_path(os.path.basename(path), True))
     return sanitized
 
-def sanitize_path(pathFileName, isFileName):
-    sanitized = pathFileName
+def sanitize_path(path, isFileName):
+    sanitized = path
     illegal = '{}\\'
     for char in illegal:
         sanitized = sanitized.replace(char, '')
     if isFileName:
         sanitized = sanitized.replace('/', '')
         sanitized = sanitized.replace('..', '.')
+    else:
+        sanitized = sanitized.replace(' .', '.')
+        sanitized = sanitized.replace('....', '')
+        sanitized = sanitized.replace('...', '')
+        sanitized = sanitized.replace('..', '')
     return sanitized
 
 def write_file(path, text):
