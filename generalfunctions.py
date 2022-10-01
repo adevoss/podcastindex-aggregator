@@ -51,10 +51,10 @@ def download(url, path, log_path, overwrite, querystringtracking):
     downloaded = False
     try:
         if url != None and url !='':
-           path = sanitize(path)
            if not querystringtracking:
               url = url.split('?')[0]
            if path != None and path !='':
+              path = sanitize(path)
               if (os.path.exists(path) and overwrite) or not os.path.exists(path):
                  message = 'Downloading \'' + os.path.basename(path) + '\' ...'
                  print(message)
