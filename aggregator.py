@@ -180,7 +180,6 @@ def search_podcast_by_feed(feed, log_path):
     url = PIurl + "podcasts/byfeedurl?url=" + feed + "&pretty"
     #generalfunctions.log(log_path, url, False, True)
     search_result = PIfunctions.request(url, log_path)
-    print(search_result)
     status = generalfunctions.to_boolean(search_result['status'])
     if status:
        podcast_id = search_result['feed']['id']
