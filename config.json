@@ -2,7 +2,8 @@
     "podcastindex":{
         "url":"https://api.podcastindex.org/api/1.0/",
         "key":"xxxxxxxxxxxxxxxxxxxxxxxxxx",
-        "secret":"xxxxxxxxxxxxxxxxxxxxxxx"
+        "secret":"xxxxxxxxxxxxxxxxxxxxxxx",
+        "wait":0
     },
     "querystringtracking":{
         "enable":1
@@ -28,7 +29,9 @@
         "numberOfEpisodes":"20",
         "announceLive":"24",
         "leadinLive":"15",
-        "leadoutLive":"15"
+        "leadoutLive":"15",
+        "timeoutConnect":5,
+        "timeoutRead":300
     },
     "file":{
         "podcastlist":"/path/to/podcastlist.json"

@@ -40,7 +40,7 @@ def request_header():
         'X-Auth-Date': str(epoch_time),
         'X-Auth-Key': api_key,
         'Authorization': sha_1,
-        'User-Agent': 'postcasting-index-python-cli'
+        'User-Agent': 'podcasting-index-python-cli'
     }
     return headers
 
@@ -48,15 +48,22 @@ def request(url, log_path):
     try:
        result = None
        # perform the actual post request
-       r = requests.post(url, headers=request_header())
+       timeout_connect = configuration.config["settings"]["timeoutConnect"]
+       timeout_read = configuration.config["settings"]["timeoutRead"]
+       wait = configuration.config["podcastindex"]["wait"]
+       time.sleep(wait)
+       r = requests.post(url, headers=request_header(), timeout=(timeout_connect, timeout_read))
 
        # dump the contents (in a prettified json-format)
        result = json.loads(r.text)
 
     except Exception as e:
-        message = 'Podcast Index API call: ' + str(e)
-        generalfunctions.log(log_path, message, True, False)
-        print(message)
+       message = 'Podcast Index API call: ' + str(e)
+       generalfunctions.log(log_path, message, True, False)
+       print(message)
+       message = 'Podcast Index API call: ' + str(url)
+       generalfunctions.log(log_path, message, True, False)
+       print(message)
 
     return result
 
