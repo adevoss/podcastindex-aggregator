@@ -4,6 +4,7 @@ import logging
 import csv
 import os
 import requests
+import wget
 import json
 import pathlib
 from datetime import datetime, timedelta
@@ -47,7 +48,11 @@ def create_directory(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
-def download(url, path, log_path, overwrite, querystringtracking):
+def bar_custom(current, total, width=80):
+    print('Downloading: %d%% [%d / %d] bytes ' % (current / total * 100, current, total))
+
+def download(url, path, log_path, overwrite, querystringtracking, timeout_connect, timeout_read, progress=False):
+
     downloaded = False
     try:
         if url != None and url !='':
@@ -59,9 +64,12 @@ def download(url, path, log_path, overwrite, querystringtracking):
                  message = 'Downloading \'' + os.path.basename(path) + '\' ...'
                  print(message)
                  log(log_path, message, False, False)
-                 r = requests.get(url)
-                 with open(path, 'wb') as outfile:
-                      outfile.write(r.content)
+                 if not progress:
+                    r = requests.get(url, timeout=(timeout_connect,timeout_read))
+                    with open(path, 'wb') as outfile:
+                         outfile.write(r.content)
+                 else:
+                    wget.download(url, out=path, bar=bar_custom)
                  downloaded = True
            else:
               message = "path is empty"
@@ -72,9 +80,22 @@ def download(url, path, log_path, overwrite, querystringtracking):
            print(message)
            log(log_path, message, True, False)
 
+    except ConnectionError as e:
+        message = 'Connection error: ' + str(url)
+        log(log_path, message, True, False)
+        print(message)
+    except requests.ConnectTimeout as e:
+        message = 'Timeout: ' + str(url)
+        log(log_path, message, True, False)
+        print(message)
     except Exception as e:
-        log(log_path, str(e), True, False)
-        print(e)
+        name = 'funtion: download'
+        message = name + ': ' + str(e)
+        log(log_path, message, True, False)
+        print(message)
+        message = name + ': ' + str(url)
+        log(log_path, message, True, False)
+        print(message)
 
     return downloaded
 
