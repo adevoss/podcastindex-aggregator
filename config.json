@@ -16,6 +16,10 @@
         "url":"https://op3.dev/e/",
         "enable":1
     },
+    "pdcn":{
+        "url":"https://pdcn.co/e/",
+        "enable":0
+    },
     "directory":{
         "data":"/path/to/podcastfiles",
         "log":"LOG",
@@ -31,7 +35,7 @@
         "leadinLive":"15",
         "leadoutLive":"15",
         "timeoutConnect":5,
-        "timeoutRead":300
+        "timeoutRead":3
     },
     "file":{
         "podcastlist":"/path/to/podcastlist.json"
