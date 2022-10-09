@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import configuration
+import config
 import generalfunctions
 
 from datetime import date
@@ -24,8 +24,8 @@ def request_header():
     # setup some basic vars for the search api. 
     # for more information, see https://api.podcastindex.org/developer_docs
     global config
-    api_key = configuration.config["podcastindex"]["key"]
-    api_secret = configuration.config["podcastindex"]["secret"]
+    api_key = config.file["podcastindex"]["key"]
+    api_secret = config.file["podcastindex"]["secret"]
 
     # we'll need the unix time
     epoch_time = int(time.time())
@@ -40,17 +40,17 @@ def request_header():
         'X-Auth-Date': str(epoch_time),
         'X-Auth-Key': api_key,
         'Authorization': sha_1,
-        'User-Agent': 'podcasting-index-python-cli'
+        'User-Agent': 'otg2.0-cli'
     }
     return headers
 
-def request(url, log_path):
+def request(url):
     try:
        result = None
        # perform the actual post request
-       timeout_connect = configuration.config["settings"]["timeoutConnect"]
-       timeout_read = configuration.config["settings"]["timeoutRead"]
-       wait = configuration.config["podcastindex"]["wait"]
+       timeout_connect = config.file["settings"]["timeoutConnect"]
+       timeout_read = config.file["settings"]["timeoutRead"]
+       wait = config.file["podcastindex"]["wait"]
        time.sleep(wait)
        r = requests.post(url, headers=request_header(), timeout=(timeout_connect, timeout_read))
 
@@ -59,10 +59,10 @@ def request(url, log_path):
 
     except Exception as e:
        message = 'Podcast Index API call: ' + str(e)
-       generalfunctions.log(log_path, message, True, False)
+       generalfunctions.log(message, True, False)
        print(message)
        message = 'Podcast Index API call: ' + str(url)
-       generalfunctions.log(log_path, message, True, False)
+       generalfunctions.log(message, True, False)
        print(message)
 
     return result

@@ -8,17 +8,71 @@ import requests
 
 import xml.etree.cElementTree as ET
 
+import config
+import log
 import PIfunctions
-import configuration
 import generalfunctions
 
-def search_podcast(query, log_path):
-    feeds = []
-    PIurl = configuration.config["podcastindex"]["url"]
-    url = PIurl  + 'search/byterm?q=' + query + "&pretty"
-    result = PIfunctions.request(url, log_path)
 
-    if result != None:
+def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead):
+    downloaded = 100
+    try:
+       downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
+    except Exception as e:
+       message = str('wget')
+       log.log(True, False, message)
+       message = str(e)
+       log.log(True, False, message)
+       message = str(url)
+       log.log(True, False, message)
+
+    try:
+       if downloaded >= 10:
+          downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
+    except Exception as e:
+       message = 'Function: download'
+       log.log(True, False, message)
+       print(message)
+       message = str(e)
+       log.log(True, False, message)
+       print(message)
+       message = str('request')
+       log.log(True, False, message)
+       print(message)
+       message = str(url)
+       log.log(True, False, message)
+       print(message)
+
+       config.exception_count += 1
+    return downloaded
+
+def strip_tracking(url):
+    pdcn = bool(config.file["pdcn"]["enable"])
+    podtrac = bool(config.file["podtrac"]["enable"])
+    op3 = bool(config.file["op3"]["enable"])
+
+    if not pdcn:
+       pdcnurl  = str(config.file["pdcn"]["url"])
+       url = url.replace(pdcnurl, 'https://')
+    if not podtrac:
+       podtracurl = str(config.file["podtrac"]["url"])
+       url = url.replace(podtracurl, 'https://')
+    if not op3:
+       op3url = str(config.file["op3"]["url"])
+       url = url.replace(op3url, 'https://')
+    return url
+
+def search_podcast(query):
+    feeds = []
+    PIurl = config.file["podcastindex"]["url"]
+    url = PIurl  + 'search/byterm?q=' + query + "&pretty"
+    result = PIfunctions.request(url)
+
+    if result == None:
+       config.exception_count += 1
+       message = 'No response from podcastindex API call: ' + url
+       log.log(True, False, message)
+    else:
        count = result['count']
        if count > 0:
            for feed in result['feeds']:
@@ -32,7 +86,7 @@ def search_podcast(query, log_path):
            print(feed['url'])
     return feeds
 
-def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
+def livestream(feed_url, feed_id, feed_title, playlist_path):
     try:
        tzpretty = "Europe/Amsterdam"
        now = generalfunctions.now()
@@ -42,20 +96,6 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
        formatpretty = "%H:%M %m/%d/%Y"
        tomorrowTZ = generalfunctions.tomorrow()
        message = feed_url + ' not live now'
-
-       PIurl = configuration.config["podcastindex"]["url"]
-       url = PIurl + "episodes/live/byfeedid?id=" + str(feed_id) + "&pretty"
-       url = PIurl + "episodes/live"
-       lits = PIfunctions.request(url, log_path)
-       if lits != None:
-          status = generalfunctions.to_boolean(lits['status'])
-          if status:
-             lits = lits['items']
-             for lit in lits:
-                 if lit['feedId'] == feed_id:
-                    message = lit['title'] + ' at ' + startdatepretty  + ' on ' + url
-                    generalfunctions.log(log_path, message, False, False)
-                    print(message)
 
        xml = loadXML_podcast(feed_url)
        lits = get_liveitems(xml)
@@ -82,14 +122,14 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
                  startdatepretty = startdateTZ.strftime(formatpretty)
                  startdateseconds = generalfunctions.to_epoch(startdateTZ)
 
-                 live_announce_hours = int(configuration.config["settings"]["announceLive"])
+                 live_announce_hours = int(config.file["settings"]["announceLive"])
                  live_announce_seconds = live_announce_hours * 3600
                  announceseconds = nowseconds + live_announce_seconds
                  announcedate = generalfunctions.to_date(announceseconds)
                  announcedateTZ = generalfunctions.date_to_tz(announcedate, tzpretty)
 
-                 live_leadin = -int(configuration.config["settings"]["leadinLive"])
-                 live_leadout = int(configuration.config["settings"]["leadoutLive"])
+                 live_leadin = -int(config.file["settings"]["leadinLive"])
+                 live_leadout = int(config.file["settings"]["leadoutLive"])
 
               if end != "":
                  enddate = generalfunctions.string_to_date(end)
@@ -119,7 +159,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, log_path):
 
     except Exception as e:
         message = str(e)
-        generalfunctions.log(log_path, message, True, False)
+        log.log(True, False, message)
         print(message)
 
 def loadXML_podcast(feed):
@@ -170,45 +210,58 @@ def get_liveitem_title(lit):
     return title
 
 def get_liveitem_url(lit):
-    url = ""
-    if lit != "":
+    url = None
+    if lit != None and lit != '':
        url = lit.find('enclosure').attrib.get('url')
+       if url != None and url != '':
+          url = strip_tracking(url)
     return url
 
-def search_podcast_by_feed(feed, log_path):
-    PIurl = configuration.config["podcastindex"]["url"]
+def search_podcast_by_feed(feed):
+    PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedurl?url=" + feed + "&pretty"
-    #generalfunctions.log(log_path, url, False, True)
-    search_result = PIfunctions.request(url, log_path)
-    status = generalfunctions.to_boolean(search_result['status'])
-    if status:
-       podcast_id = search_result['feed']['id']
+    search_result = PIfunctions.request(url)
+    if search_result == None:
+       config.exception_count += 1
+       message = 'No response from podcastindex API call: ' + url
+       log.log(True, False, message)
     else:
-       podcast_id = ""
+       status = generalfunctions.to_boolean(search_result['status'])
+       if status:
+          podcast_id = search_result['feed']['id']
+       else:
+          podcast_id = ""
     return podcast_id
 
-def search_podcast_by_id(feedId, log_path):
+def search_podcast_by_id(feedId):
     feed_url = None
-    PIurl = configuration.config["podcastindex"]["url"]
+    PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedid?id=" + feedId + "&pretty"
-    #generalfunctions.log(log_path, url, False, True)
-    search_result = PIfunctions.request(url, log_path)
-    if search_result != None:
+    search_result = PIfunctions.request(url)
+    if search_result == None:
+       config.exception_count += 1
+       message = 'No response from podcastindex API call: ' + url
+       log.log(True, False, message)
+    else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
           feed_url = search_result['feed']['url']
     return feed_url
 
-def podcastdata(feedId, log_path):
-    PIurl = configuration.config["podcastindex"]["url"]
+def podcastdata(feedId):
+    feed_result = None
+    PIurl = config.file["podcastindex"]["url"]
     url = PIurl  + "podcasts/byfeedid?id=" + str(feedId)
-    #generalfunctions.log(log_path, url, False, True)
-    feed_result = PIfunctions.request(url, log_path)
+    feed_result = PIfunctions.request(url)
+    if feed_result == None:
+       config.exception_count += 1
+       message = 'No response from podcastindex API call: ' + url
+       log.log(True, False, message)
     return feed_result
 
-def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose):
+def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
     current = False
-    feedurlPI = search_podcast_by_id(feedId, log_path)
+    feedurlPI = search_podcast_by_id(feedId)
     if feedurlPI == None:
        message = 'Podcast Index not available'
     else:
@@ -219,21 +272,24 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, log_path, verbose)
           message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
 
     if not current:
-       generalfunctions.log(log_path, message, False, False)
+       log.log(False, False, message)
        print(message)
 
     if verbose:
        generalfunctions.writetext(playlist_path, message)
        print(message)
 
-def episodes(feedId, number_of_episodes, log_path):
-    PIurl = configuration.config["podcastindex"]["url"]
+def episodes(feedId, number_of_episodes):
+    PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "episodes/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
-    #generalfunctions.log(log_path, url, False, True)
-    episodes_result = PIfunctions.request(url, log_path)
+    episodes_result = PIfunctions.request(url)
+    if episodes_result == None:
+       config.exception_count += 1
+       message = 'No response from podcastindex API call: ' + url
+       log.log(True, False, message)
     return episodes_result
 
-def process_file(data, data_path, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
+def process_file(data, data_path, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
     for podcast_data in data['podcastlist']:
         feedurl = "-"
         verbose = False
@@ -242,43 +298,41 @@ def process_file(data, data_path, number_of_episodes, log_path, playlist_path, p
 
         if podcast_data["id"][:1] != '#':
            if podcast_to_process == "ALL" or str(podcast_to_process) == podcast_data["id"] or str(podcast_to_process) == podcast_data["feed"]:
+
+              # logging
+              message = 'Processing podcast \'' + podcast_data["title"] + '\''
+              print('==========================================================')
+              print(message)
+              print('==========================================================')
+              log.log(False, False, message)
+
               if mode == "LIST":
                  print(podcast_data['title'] + ' ' + podcast_data['id'])
 
               if mode == "CHECK" or mode == "PROCESS":
-                 check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, log_path, verbose)
+                 check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, verbose)
 
-              if mode == "LIVE":
-                 livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, log_path)
+              if mode == "LIVE" or mode == "PROCESS":
+                 livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path)
 
               if mode == "PROCESS":
-                 process_podcast(podcast_data, number_of_episodes, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode)
+                 process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, playlist_client_path, overwrite, mode)
         else:
            if podcast_to_process == "ALL":
               message = 'Skipping podcast \'' + podcast_data["title"] + '\''
-              generalfunctions.log(log_path, message, False, False)
+              log.log(False, False, message)
 
-def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playlist_path, playlist_client_path, overwrite, mode):
+def process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, playlist_client_path, overwrite, mode):
     try:
         # create directory for podcast
         podcast_path = os.path.join(data_path, podcast_data["directory"], podcast_data["title"])
         podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
         generalfunctions.create_directory(podcast_path)
 
-        # logging
-        message = 'Processing podcast \'' + podcast_data["title"] + '\''
-        print('==========================================================')
-        print(message)
-        print('==========================================================')
-        generalfunctions.log(log_path, message, False, False)
-
-        feed = podcastdata(podcast_data["id"], log_path)
+        feed = podcastdata(podcast_data["id"])
 
         if feed != None:
-           feed = podcastdata(podcast_data["id"], log_path)["feed"]
-           # livestream
-           if mode == "PROCESS" or mode == "LIVE":
-              livestream(feed["url"], feed["id"], feed["title"], playlist_path, log_path)
+           feed = podcastdata(podcast_data["id"])["feed"]
 
            if mode == "PROCESS":
               # download feed assets
@@ -288,26 +342,30 @@ def process_podcast(podcast_data, number_of_episodes, data_path, log_path, playl
 
               # image
               url = feed["image"]
-              path = os.path.basename(url)
-              path = os.path.join(podcast_path, path)
-              path = path.split('?')[0]
-              querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-              downloaded = generalfunctions.download(url, path, log_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+              if url != None and url != '':
+                 path = os.path.basename(url)
+                 path = os.path.join(podcast_path, path)
+                 path = path.split('?')[0]
+                 querystringtracking = bool(config.file["querystringtracking"]["enable"])
+                 downloaded = download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+                 if downloaded >= 10:
+                    config.exception_count += 1
+                    message = 'Podcast image (' + url + ') not downloaded. Returncode: ' + str(downloaded)
+                    log.log(True, False, message)
 
               # process episodes
-              process_episodes(podcast_data["id"], number_of_episodes, podcast_data["title"], podcast_path, log_path, playlist_path, podcast_client_path, overwrite)
+              process_episodes(podcast_data["id"], number_of_episodes, podcast_data["title"], podcast_path, playlist_path, podcast_client_path, overwrite)
 
     except Exception as e:
         message = e
-        generalfunctions.log(log_path, message, True, False)
         print(message)
 
-def process_chapter(chapter, path, log_path, overwrite):
+def process_chapter(chapter, path, overwrite):
     # logging
     chapter_title = str(chapter["title"][0:50])
     message = 'Processing chapter \'' + chapter_title + '\''
     print(message)
-    generalfunctions.log(log_path, message, False, False)
+    log.log(False, False, message)
 
     # create directory for chapter
     chapter_title = generalfunctions.sanitize_path(chapter_title, False)
@@ -330,8 +388,8 @@ def process_chapter(chapter, path, log_path, overwrite):
         #file_extention = file_extention.lower()
         if file_extension == '.png' or file_extension == '.jpg' or file_extension == '.jpeg':
             path = os.path.join(chapter_path, path)
-            querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-            generalfunctions.download(url, path, log_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+            querystringtracking = bool(config.file["querystringtracking"]["enable"])
+            generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
 
     # url
     if "url" in chapter:
@@ -349,11 +407,11 @@ def process_chapter(chapter, path, log_path, overwrite):
                 path = os.path.join(chapter_path, file_name+'-'+dateFormatted+file_extension)
 
             path = os.path.join(chapter_path, path)
-            querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-            generalfunctions.download(url, path, log_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+            querystringtracking = bool(config.file["querystringtracking"]["enable"])
+            generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
 
 
-def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path):
+def process_episode(episode, path, overwrite, playlist_path, podcast_client_path):
     title = episode["title"]
     title = generalfunctions.sanitize_path(title, False)
 
@@ -362,7 +420,7 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
     print('==========================================================')
     print(message)
     print('==========================================================')
-    generalfunctions.log(log_path, message, False, False)
+    log.log(False, False, message)
 
     # create directory for episode
     episode_path = os.path.join(path, title)
@@ -381,39 +439,39 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
         path = os.path.basename(url)
         path = path.split('?')[0]
         path = os.path.join(episode_path, path)
-        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-        generalfunctions.download(url, path, log_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+        querystringtracking = bool(config.file["querystringtracking"]["enable"])
+        generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
 
     # enclosure url
     url = episode["enclosureUrl"]
     if url != None and url != '':
        url = episode["enclosureUrl"]
-       podtrac = bool(configuration.config["podtrac"]["enable"])
-       op3 = bool(configuration.config["op3"]["enable"])
-       if not podtrac:
-          podtracurl = str(configuration.config["podtrac"]["url"])
-          url = url.replace(podtracurl, 'https://')
-       if not op3:
-          op3url = str(configuration.config["op3"]["url"])
-          url = url.replace(op3url, 'https://')
+
+       url = strip_tracking(url)
 
        enclosure_file = os.path.basename(url)
        enclosure_file = enclosure_file.split('?')[0]
        enclosure_path = os.path.join(episode_path, enclosure_file)
        enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
-       querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-       downloaded = generalfunctions.download(url, enclosure_path, log_path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True)
-       if downloaded:
+       querystringtracking = bool(config.file["querystringtracking"]["enable"])
+
+       downloaded = download(url, enclosure_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+       if downloaded == 0:
+          config.count_newpodcasts += 1
           generalfunctions.writetext(playlist_path, enclosure_client_path)
+       if downloaded >= 10:
+          config.exception_count += 1
+          message = 'Podcast not downloaded. Returncode: ' + str(downloaded)
+          log.log(True, False, message)
 
     # chapters
     url = episode["chaptersUrl"]
     if url != None and url != '':
         path = os.path.basename(url)
         path = os.path.join(episode_path, path)
-        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-        downloaded = generalfunctions.download(url, path, log_path, True, querystringtracking, timeoutConnect, timeoutRead)
-        if downloaded:
+        querystringtracking = bool(config.file["querystringtracking"]["enable"])
+        downloaded = download(url, path, True, querystringtracking, timeoutConnect, timeoutRead)
+        if downloaded == 0:
            chapter_file = path
 
            # create directory for chapters
@@ -422,41 +480,51 @@ def process_episode(episode, path, overwrite, log_path, playlist_path, podcast_c
            chapter_path = path
 
            # download chapters
-           chapters = generalfunctions.read_json(chapter_file, log_path)
+           chapters = generalfunctions.read_json(chapter_file)
            if chapters != None and chapters != '':
               for (chapter) in chapters["chapters"]:
-                  process_chapter(chapter, chapter_path, log_path, overwrite)
+                  process_chapter(chapter, chapter_path, overwrite)
+        else: 
+           config.exception_count += 1
+           message = 'Podcast chapters not downloaded. Returncode: ' + str(downloaded)
+           log.log(True, False, message)
 
     # transcript
     url = episode["transcriptUrl"]
     if url != None and url != '':
         path = os.path.basename(url)
         path = os.path.join(episode_path, path)
-        querystringtracking = bool(configuration.config["querystringtracking"]["enable"])
-        generalfunctions.download(url, path, log_path, True, querystringtracking, timeoutConnect, timeoutRead)
+        querystringtracking = bool(config.file["querystringtracking"]["enable"])
+        generalfunctions.download(url, path, True, querystringtracking, timeoutConnect, timeoutRead)
 
-def process_episodes(feedId, number_of_episodes, feedTitle, path, log_path, playlist_path, podcast_client_path, overwrite):
+def process_episodes(feedId, number_of_episodes, feedTitle, path, playlist_path, podcast_client_path, overwrite):
     # create directory for episodes
     path = os.path.join(path, 'Episodes')
     podcast_client_path = os.path.join(podcast_client_path, 'Episodes')
     generalfunctions.create_directory(path)
 
-    episodes_data = episodes(feedId, number_of_episodes, log_path)
-    if episodes_data != None:
+    episodes_data = episodes(feedId, number_of_episodes)
+    if episodes_data == None:
+       config.exception_count += 1
+       message = 'Podcast episodes can\'t be downloaded. Returncode: ' + str(downloaded)
+       log.log(True, False, message)
+    else:
        episodes_data = episodes_data["items"]
        for episode in episodes_data:
-           process_episode(episode, path, overwrite, log_path, playlist_path, podcast_client_path)
+           process_episode(episode, path, overwrite, playlist_path, podcast_client_path)
 
 def aggregate(mode, podcast_to_process, number_of_episodes):
     try:
-        datadir = configuration.config["directory"]["data"]
-        playlist_client_path = configuration.config["directory"]["playlist"]
-        podcastlist_file = configuration.config["file"]["podcastlist"]
+        config.exception_count = 0
+        config.count_newpodcasts = 0
+        datadir = config.file["directory"]["data"]
+        playlist_client_path = config.file["directory"]["playlist"]
+        podcastlist_file = config.file["file"]["podcastlist"]
 
         # create directory
-        log_path = os.path.join(datadir, configuration.config["directory"]["log"])
-        generalfunctions.create_directory(log_path)
-        playlist_path = os.path.join(datadir, configuration.config["directory"]["play"])
+        config.log_path = os.path.join(datadir, config.file["directory"]["log"])
+        generalfunctions.create_directory(config.log_path)
+        playlist_path = os.path.join(datadir, config.file["directory"]["play"])
         generalfunctions.create_directory(playlist_path)
 
         now = generalfunctions.now()
@@ -465,31 +533,62 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         else:
            dateString = generalfunctions.format_dateYYYMMDDHHMMSS(now)
 
-        log_path = os.path.join(log_path, dateString+'.log')
+        config.log_error_path = os.path.join(config.log_path, dateString + '-error.log')
+        config.log_path = os.path.join(config.log_path, dateString+'.log')
+        log.configure(config.log_path, config.log_error_path)
+
         playlist_path = os.path.join(playlist_path, dateString+'.m3u')
         overwrite = False
 
         # logging
         if podcast_to_process == "ALL":
            message = 'Processing file \''+ podcastlist_file + '\''
-           generalfunctions.log(log_path, message, False, False)
+           log.log(False, False, message)
         else:
            message = 'Processing podcast \''+ podcast_to_process + '\''
 
         now = generalfunctions.now()
-        data = generalfunctions.read_json(podcastlist_file, log_path)
+        data = generalfunctions.read_json(podcastlist_file)
         if mode == 'SEARCH':
-           search_podcast(str(podcast_to_process), log_path)
+           search_podcast(str(podcast_to_process))
         else:
-           process_file(data, datadir, number_of_episodes, log_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
+           process_file(data, datadir, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
+
+        message = 'Finished: ' + str(config.exception_count) + ' errors.'
+        if config.exception_count > 0:
+           message += ' See ' + config.log_error_path 
+        print('==========================================================')
+        print(message)
+
+        message = str(config.count_newpodcasts) + ' new podcasts.'
+        print(message)
+        print('==========================================================')
+
+        if config.exception_count > 0:
+           errors = generalfunctions.read_file(config.log_error_path)
+           if errors == None:
+              print('File ' + config.log_error_path + ' does not exists')
+           else:
+              print(errors)
+           print('==========================================================')
+
+        if config.count_newpodcasts > 0:
+           newpodcasts = generalfunctions.read_file(playlist_path)
+           if errors == None:
+              print('File ' + playlist_path + ' does not exists')
+           else:
+              print(newpodcasts)
+           print('==========================================================')
 
     except Exception as e:
         message = e
         print(message)
-        generalfunctions.log(log_path, message, True, False)
+        log.log(True, False, message)
 
 
 try:
+    config.file = config.read_file() 
+
     mode = "PROCESS"
     podcast_to_process = "ALL"
     number_of_episodes = 0
@@ -510,18 +609,17 @@ try:
     if mode == "-h" or mode == "--help":
        print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes]')
     else:
-       configuration.read() 
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
           if int(number_of_episodes) == 0:
-             number_of_episodes = int(configuration.config["settings"]["numberOfEpisodes"])
+             number_of_episodes = int(config.file["settings"]["numberOfEpisodes"])
 
-          timeoutConnect = int(configuration.config["settings"]["timeoutConnect"])
-          timeoutRead = int(configuration.config["settings"]["timeoutRead"])
+          timeoutConnect = int(config.file["settings"]["timeoutConnect"])
+          timeoutRead = int(config.file["settings"]["timeoutRead"])
 
           aggregate(mode, podcast_to_process, number_of_episodes)
 
 except Exception as e:
-    message = e
-    message = 'Function: ' + function.__name__ + ': ' + str(e)
-    generalfunctions.log(log_path, message, True, False)
+    message = 'Function: main: ' + str(e)
+    log.log(True, False, message)
     print(message)
+

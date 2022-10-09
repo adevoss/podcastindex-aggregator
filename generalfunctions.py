@@ -13,89 +13,59 @@ from dateutil import parser as DP
 import pytz
 
 
-def log(path, message, isError, isDebug):
-    try:
-        logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", handlers=[logging.FileHandler(path)])
-
-        if isError:
-           logging.error(message)
-        else:
-           if isDebug:
-              logging.debug(message)
-           else:
-              logging.info(message)
-
-    except Exception as e:
-        logging.error(str(e))
-        #print(e)
+def log_handler_file(filename):
+    handler = logging.FileHandler(filename, mode='a', encoding='utf-8', delay=True)
+    return handler
 
 def writetext(path, message):
-    try:
-        if os.path.isfile(path):
-            with open(path, "a") as outfile:
-                outfile.write("\n")
-        else:
-            with open(path, 'w') as outfile: 
-                pass
-
+    if os.path.isfile(path):
         with open(path, "a") as outfile:
-            outfile.write(message)
+            outfile.write("\n")
+    else:
+        with open(path, 'w') as outfile: 
+            pass
 
-    except Exception as e:
-        logging.error(str(e))
+    with open(path, "a") as outfile:
+        outfile.write(message)
 
 def create_directory(path):
     if not os.path.isdir(path):
         os.makedirs(path)
 
 def bar_custom(current, total, width=80):
-    print('Downloading: %d%% [%d / %d] bytes ' % (current / total * 100, current, total))
+    print('Downloading: %d%% [%d / %d] bytes' % (current / total * 100, current, total))
 
-def download(url, path, log_path, overwrite, querystringtracking, timeout_connect, timeout_read, progress=False):
+def download(url, path, overwrite, querystringtracking, timeout_connect, timeout_read, progress=False, verbose=True):
+    # 0 = success
+    # 1 = already downloaded
+    # 10 = failed
+    downloaded = 10
 
-    downloaded = False
-    try:
-        if url != None and url !='':
-           if not querystringtracking:
-              url = url.split('?')[0]
-           if path != None and path !='':
-              path = sanitize(path)
-              if (os.path.exists(path) and overwrite) or not os.path.exists(path):
-                 message = 'Downloading \'' + os.path.basename(path) + '\' ...'
-                 print(message)
-                 log(log_path, message, False, False)
-                 if not progress:
-                    r = requests.get(url, timeout=(timeout_connect,timeout_read))
-                    with open(path, 'wb') as outfile:
-                         outfile.write(r.content)
-                 else:
-                    wget.download(url, out=path, bar=bar_custom)
-                 downloaded = True
-           else:
-              message = "path is empty"
-              print(message)
-              log(log_path, message, True, False)
-        else:
-           message = "url is empty"
-           print(message)
-           log(log_path, message, True, False)
+    if url != None and url !='':
+       if not querystringtracking:
+          url = url.split('?')[0]
+       if path != None and path !='':
+          path = sanitize(path)
+          if (os.path.exists(path) and overwrite) or not os.path.exists(path):
+             message = 'Downloading \'' + os.path.basename(path) + '\' ...'
+             if verbose:
+                print(message)
 
-    except ConnectionError as e:
-        message = 'Connection error: ' + str(url)
-        log(log_path, message, True, False)
-        print(message)
-    except requests.ConnectTimeout as e:
-        message = 'Timeout: ' + str(url)
-        log(log_path, message, True, False)
-        print(message)
-    except Exception as e:
-        name = 'funtion: download'
-        message = name + ': ' + str(e)
-        log(log_path, message, True, False)
-        print(message)
-        message = name + ': ' + str(url)
-        log(log_path, message, True, False)
-        print(message)
+             if not progress:
+                r = requests.get(url, timeout=(timeout_connect,timeout_read))
+                with open(path, 'wb') as outfile:
+                     outfile.write(r.content)
+             else:
+                wget.download(url, out=path, bar=bar_custom)
+             downloaded = 0
+          else:
+             downloaded = 1
+       else:
+          message = "path is empty"
+          print(message)
+    else:
+       message = "url is empty"
+       print(message)
 
     return downloaded
 
@@ -118,30 +88,30 @@ def sanitize_path(path, isFileName):
         sanitized = sanitized.replace('..', '')
     return sanitized
 
+def read_file(path):
+    text = None
+    if os.path.exists(path):
+       with open(path, "r") as file: 
+           text = file.read()
+    return text
+
 def write_file(path, text):
     with open(path, "w") as outfile: 
         outfile.write(text)
 
-def read_json(path, log_path):
-    try:
-       json_text = None
-       with open(path, 'r', encoding="utf-8-sig") as openfile: 
-            text = openfile.read()
-            openfile.close()
+def read_json(path):
+    json_text = None
+    with open(path, 'r', encoding="utf-8-sig") as openfile: 
+         text = openfile.read()
+         openfile.close()
 
-       # strip BOM character
-       text = text.lstrip('\ufeff')
+    # strip BOM character
+    text = text.lstrip('\ufeff')
 
-       if '<!DOCTYPE HTML>' in text:
-          message = 'Text is HTML not JSON.'
-          log(log_path, message, True, False)
-       else:
-          json_text = json.loads(text)
-
-    except Exception as e:
-        json_text = None
-        log(log_path, str(e), True, False)
-        print(e)
+    if '<!DOCTYPE HTML>' in text:
+       message = 'Text is HTML not JSON.'
+    else:
+       json_text = json.loads(text)
 
     return json_text
 
