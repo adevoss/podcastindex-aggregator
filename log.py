@@ -20,12 +20,16 @@ def configure(filename_app, filename_error):
     config.logger_error.setLevel(logging.DEBUG)
     config.logger_error.addHandler(handler)
 
-def log(isErrorLogger, isDebug, message):
+def log(isErrorLogger, level, message):
     if isErrorLogger:
-       config.logger_error.error(message)
+       if level == 'WARN':
+          config.logger_error.warn(message)
+       if level == 'ERROR':
+          config.logger_error.error(message)
+       if level == 'DEBUG':
+          config.logger_error.debug(message)
     else:
-       if isDebug:
-          config.logger_app.debug(message)
-          logger.debug(message)
-       else:
+       if level == 'INFO':
           config.logger_app.info(message)
+       if level == 'WARN':
+          config.logger_app.warn(message)

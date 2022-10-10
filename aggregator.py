@@ -20,30 +20,25 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
        downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
     except Exception as e:
        message = str('wget')
-       log.log(True, False, message)
+       log.log(True, 'WARN', message)
        message = str(e)
-       log.log(True, False, message)
+       log.log(True, 'WARN', message)
        message = str(url)
-       log.log(True, False, message)
+       log.log(True, 'WARN', message)
 
     try:
        if downloaded >= 10:
           downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
     except Exception as e:
-       message = 'Function: download'
-       log.log(True, False, message)
-       print(message)
-       message = str(e)
-       log.log(True, False, message)
-       print(message)
        message = str('request')
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
+       message = str(e)
+       log.log(True, 'ERROR', message)
        print(message)
        message = str(url)
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
        print(message)
 
-       config.exception_count += 1
     return downloaded
 
 def strip_tracking(url):
@@ -71,7 +66,7 @@ def search_podcast(query):
     if result == None:
        config.exception_count += 1
        message = 'No response from podcastindex API call: ' + url
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     else:
        count = result['count']
        if count > 0:
@@ -159,7 +154,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path):
 
     except Exception as e:
         message = str(e)
-        log.log(True, False, message)
+        log.log(True, 'ERROR', message)
         print(message)
 
 def loadXML_podcast(feed):
@@ -224,7 +219,7 @@ def search_podcast_by_feed(feed):
     if search_result == None:
        config.exception_count += 1
        message = 'No response from podcastindex API call: ' + url
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
@@ -241,7 +236,7 @@ def search_podcast_by_id(feedId):
     if search_result == None:
        config.exception_count += 1
        message = 'No response from podcastindex API call: ' + url
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
@@ -256,7 +251,7 @@ def podcastdata(feedId):
     if feed_result == None:
        config.exception_count += 1
        message = 'No response from podcastindex API call: ' + url
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     return feed_result
 
 def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
@@ -272,7 +267,7 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
           message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
 
     if not current:
-       log.log(False, False, message)
+       log.log(False, 'INFO', message)
        print(message)
 
     if verbose:
@@ -286,7 +281,7 @@ def episodes(feedId, number_of_episodes):
     if episodes_result == None:
        config.exception_count += 1
        message = 'No response from podcastindex API call: ' + url
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     return episodes_result
 
 def process_file(data, data_path, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
@@ -304,7 +299,7 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlist_cl
               print('==========================================================')
               print(message)
               print('==========================================================')
-              log.log(False, False, message)
+              log.log(False, 'INFO', message)
 
               if mode == "LIST":
                  print(podcast_data['title'] + ' ' + podcast_data['id'])
@@ -320,7 +315,7 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlist_cl
         else:
            if podcast_to_process == "ALL":
               message = 'Skipping podcast \'' + podcast_data["title"] + '\''
-              log.log(False, False, message)
+              log.log(False, 'INFO', message)
 
 def process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, playlist_client_path, overwrite, mode):
     try:
@@ -351,7 +346,7 @@ def process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, 
                  if downloaded >= 10:
                     config.exception_count += 1
                     message = 'Podcast image (' + url + ') not downloaded. Returncode: ' + str(downloaded)
-                    log.log(True, False, message)
+                    log.log(True, 'ERROR', message)
 
               # process episodes
               process_episodes(podcast_data["id"], number_of_episodes, podcast_data["title"], podcast_path, playlist_path, podcast_client_path, overwrite)
@@ -365,7 +360,7 @@ def process_chapter(chapter, path, overwrite):
     chapter_title = str(chapter["title"][0:50])
     message = 'Processing chapter \'' + chapter_title + '\''
     print(message)
-    log.log(False, False, message)
+    log.log(False, 'INFO', message)
 
     # create directory for chapter
     chapter_title = generalfunctions.sanitize_path(chapter_title, False)
@@ -420,7 +415,7 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
     print('==========================================================')
     print(message)
     print('==========================================================')
-    log.log(False, False, message)
+    log.log(False, 'INFO', message)
 
     # create directory for episode
     episode_path = os.path.join(path, title)
@@ -462,7 +457,7 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
        if downloaded >= 10:
           config.exception_count += 1
           message = 'Podcast not downloaded. Returncode: ' + str(downloaded)
-          log.log(True, False, message)
+          log.log(True, 'ERROR', message)
 
     # chapters
     url = episode["chaptersUrl"]
@@ -487,7 +482,7 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
         else: 
            config.exception_count += 1
            message = 'Podcast chapters not downloaded. Returncode: ' + str(downloaded)
-           log.log(True, False, message)
+           log.log(True, 'ERROR', message)
 
     # transcript
     url = episode["transcriptUrl"]
@@ -507,7 +502,7 @@ def process_episodes(feedId, number_of_episodes, feedTitle, path, playlist_path,
     if episodes_data == None:
        config.exception_count += 1
        message = 'Podcast episodes can\'t be downloaded. Returncode: ' + str(downloaded)
-       log.log(True, False, message)
+       log.log(True, 'ERROR', message)
     else:
        episodes_data = episodes_data["items"]
        for episode in episodes_data:
@@ -543,7 +538,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         # logging
         if podcast_to_process == "ALL":
            message = 'Processing file \''+ podcastlist_file + '\''
-           log.log(False, False, message)
+           log.log(False, 'INFO', message)
         else:
            message = 'Processing podcast \''+ podcast_to_process + '\''
 
@@ -554,14 +549,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         else:
            process_file(data, datadir, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
-        message = 'Finished: ' + str(config.exception_count) + ' errors.'
-        if config.exception_count > 0:
-           message += ' See ' + config.log_error_path 
-        print('==========================================================')
-        print(message)
 
-        message = str(config.count_newpodcasts) + ' new podcasts.'
-        print(message)
         print('==========================================================')
 
         if config.exception_count > 0:
@@ -580,10 +568,20 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
               print(newpodcasts)
            print('==========================================================')
 
+        message = 'Finished: ' + str(config.exception_count) + ' errors.'
+        if config.exception_count > 0:
+           message += ' See ' + config.log_error_path 
+           print(message)
+           print('==========================================================')
+
+        message = str(config.count_newpodcasts) + ' new podcasts.'
+        print(message)
+        print('==========================================================')
+
     except Exception as e:
         message = e
         print(message)
-        log.log(True, False, message)
+        log.log(True, 'ERROR', message)
 
 
 try:
@@ -620,6 +618,6 @@ try:
 
 except Exception as e:
     message = 'Function: main: ' + str(e)
-    log.log(True, False, message)
+    log.log(True, 'ERROR', message)
     print(message)
 
