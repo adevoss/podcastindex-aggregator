@@ -22,14 +22,24 @@ def configure(filename_app, filename_error):
 
 def log(isErrorLogger, level, message):
     if isErrorLogger:
+       if level == 'DEBUG':
+          config.logger_error.debug(message)
+       if level == 'INFO':
+          config.logger_error.info(message)
        if level == 'WARN':
           config.logger_error.warn(message)
        if level == 'ERROR':
           config.logger_error.error(message)
-       if level == 'DEBUG':
-          config.logger_error.debug(message)
+       if level == 'CRITICAL':
+          config.logger_error.critical(message)
     else:
+       if level == 'DEBUG':
+          config.logger_app.debug(message)
        if level == 'INFO':
           config.logger_app.info(message)
        if level == 'WARN':
           config.logger_app.warn(message)
+       if level == 'ERROR':
+          config.logger_app.error(message)
+       if level == 'CRITICAL':
+          config.logger_app.critical(message)

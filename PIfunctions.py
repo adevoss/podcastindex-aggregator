@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import config
-import generalfunctions
+import log
 
 from datetime import date
 import hashlib
@@ -14,7 +14,6 @@ import time
 # print ('api secret: ' + api_secret);
 # print ('query: ' + query);
 # print ('url: ' + url);
-
 
 
 # the api follows the Amazon style authentication
@@ -40,7 +39,7 @@ def request_header():
         'X-Auth-Date': str(epoch_time),
         'X-Auth-Key': api_key,
         'Authorization': sha_1,
-        'User-Agent': 'otg2.0-cli'
+        'User-Agent': 'otg-cli'
     }
     return headers
 
@@ -59,10 +58,10 @@ def request(url):
 
     except Exception as e:
        message = 'Podcast Index API call: ' + str(e)
-       generalfunctions.log(message, True, False)
+       log.log(True, 'ERROR', message)
        print(message)
        message = 'Podcast Index API call: ' + str(url)
-       generalfunctions.log(message, True, False)
+       log.log(True, 'ERROR', message)
        print(message)
 
     return result
