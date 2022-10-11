@@ -552,13 +552,13 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
         print('==========================================================')
 
-        if config.exception_count > 0:
-           errors = generalfunctions.read_file(config.log_error_path)
-           if errors == None:
-              print('File ' + config.log_error_path + ' does not exists')
-           else:
-              print(errors)
-           print('==========================================================')
+#        if config.exception_count > 0:
+#           errors = generalfunctions.read_file(config.log_error_path)
+#           if errors == None:
+#              print('File ' + config.log_error_path + ' does not exists')
+#           else:
+#              print(errors)
+#           print('==========================================================')
 
         if config.count_newpodcasts > 0:
            newpodcasts = generalfunctions.read_file(playlist_path)
@@ -574,7 +574,10 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
            print(message)
            print('==========================================================')
 
-        message = str(config.count_newpodcasts) + ' new podcasts.'
+        message = str(config.count_newpodcasts) + ' new podcast'
+        if config.count_newpodcasts == 0 or config.count_newpodcasts >= 2:
+           message += 's'
+        message += '.'
         print(message)
         print('==========================================================')
 
