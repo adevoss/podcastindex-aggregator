@@ -57,7 +57,7 @@ def strip_tracking(url):
        url = url.replace(op3url, 'https://')
     return url
 
-def search_podcast(query):
+def pi_search_podcast(query):
     feeds = []
     PIurl = config.file["podcastindex"]["url"]
     url = PIurl  + 'search/byterm?q=' + query + "&pretty"
@@ -65,8 +65,9 @@ def search_podcast(query):
 
     if result == None:
        config.exception_count += 1
-       message = 'No response from podcastindex API call: ' + url
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
+       print(message)
     else:
        count = result['count']
        if count > 0:
@@ -212,14 +213,15 @@ def get_liveitem_url(lit):
           url = strip_tracking(url)
     return url
 
-def search_podcast_by_feed(feed):
+def pi_search_podcast_by_feed(feed):
     PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedurl?url=" + feed + "&pretty"
     search_result = PIfunctions.request(url)
     if search_result == None:
        config.exception_count += 1
-       message = 'No response from podcastindex API call: ' + url
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
+       print(message)
     else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
@@ -228,37 +230,41 @@ def search_podcast_by_feed(feed):
           podcast_id = ""
     return podcast_id
 
-def search_podcast_by_id(feedId):
+def pi_search_podcast_by_id(feedId):
     feed_url = None
     PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "podcasts/byfeedid?id=" + feedId + "&pretty"
     search_result = PIfunctions.request(url)
     if search_result == None:
        config.exception_count += 1
-       message = 'No response from podcastindex API call: ' + url
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
+       print(message)
     else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
           feed_url = search_result['feed']['url']
     return feed_url
 
-def podcastdata(feedId):
+def pi_podcastdata(feedId):
     feed_result = None
     PIurl = config.file["podcastindex"]["url"]
     url = PIurl  + "podcasts/byfeedid?id=" + str(feedId)
     feed_result = PIfunctions.request(url)
     if feed_result == None:
        config.exception_count += 1
-       message = 'No response from podcastindex API call: ' + url
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
+       print(message)
     return feed_result
 
 def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
     current = False
-    feedurlPI = search_podcast_by_id(feedId)
+    feedurlPI = pi_search_podcast_by_id(feedId)
     if feedurlPI == None:
-       message = 'Podcast Index not available'
+       message = 'Podcasts can\'t be checked.'
+       log.log(True, 'ERROR', message)
+       print(message)
     else:
        if feedurl == feedurlPI:
           current = True
@@ -274,14 +280,15 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
        generalfunctions.writetext(playlist_path, message)
        print(message)
 
-def episodes(feedId, number_of_episodes):
+def pi_episodes(feedId, number_of_episodes):
     PIurl = config.file["podcastindex"]["url"]
     url = PIurl + "episodes/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
     episodes_result = PIfunctions.request(url)
     if episodes_result == None:
        config.exception_count += 1
-       message = 'No response from podcastindex API call: ' + url
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
+       print(message)
     return episodes_result
 
 def process_file(data, data_path, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
@@ -324,10 +331,10 @@ def process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, 
         podcast_client_path = os.path.join(playlist_client_path, podcast_data["directory"], podcast_data["title"])
         generalfunctions.create_directory(podcast_path)
 
-        feed = podcastdata(podcast_data["id"])
+        feed = pi_podcastdata(podcast_data["id"])
 
         if feed != None:
-           feed = podcastdata(podcast_data["id"])["feed"]
+           feed = feed["feed"]
 
            if mode == "PROCESS":
               # download feed assets
@@ -498,10 +505,12 @@ def process_episodes(feedId, number_of_episodes, feedTitle, path, playlist_path,
     podcast_client_path = os.path.join(podcast_client_path, 'Episodes')
     generalfunctions.create_directory(path)
 
-    episodes_data = episodes(feedId, number_of_episodes)
+    episodes_data = pi_episodes(feedId, number_of_episodes)
     if episodes_data == None:
        config.exception_count += 1
-       message = 'Podcast episodes can\'t be downloaded. Returncode: ' + str(downloaded)
+       message = 'Podcast episodes can\'t be downloaded.'
+       log.log(True, 'ERROR', message)
+       message = 'No data returned from podcastindex API call: ' + url
        log.log(True, 'ERROR', message)
     else:
        episodes_data = episodes_data["items"]
@@ -545,7 +554,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         now = generalfunctions.now()
         data = generalfunctions.read_json(podcastlist_file)
         if mode == 'SEARCH':
-           search_podcast(str(podcast_to_process))
+           pi_search_podcast(str(podcast_to_process))
         else:
            process_file(data, datadir, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
@@ -562,7 +571,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
         if config.count_newpodcasts > 0:
            newpodcasts = generalfunctions.read_file(playlist_path)
-           if errors == None:
+           if newpodcasts == None:
               print('File ' + playlist_path + ' does not exists')
            else:
               print(newpodcasts)
