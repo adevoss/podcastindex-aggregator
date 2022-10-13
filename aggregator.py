@@ -16,8 +16,14 @@ import generalfunctions
 
 def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead):
     downloaded = 100
+
     try:
-       downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
+      file_name = os.path.basename(path)
+      file_extention = os.path.splitext(file_name)[1]
+
+      if file_extention == '.mp3':
+         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
+
     except Exception as e:
        message = str('wget')
        log.log(True, 'WARN', message)
