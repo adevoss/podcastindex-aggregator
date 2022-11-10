@@ -22,7 +22,7 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
       file_extention = os.path.splitext(file_name)[1]
 
       if file_extention == '.mp3':
-         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
+         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True, True)
 
     except Exception as e:
        message = str('wget')
@@ -34,7 +34,11 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
 
     try:
        if downloaded >= 10:
-          downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
+          if file_extention == '.mp3':
+             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False, True)
+          else:
+             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False, False)
+
     except Exception as e:
        message = str('request')
        log.log(True, 'ERROR', message)
@@ -305,7 +309,7 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlist_cl
            verbose = True
 
         if podcast_data["id"][:1] != '#':
-           if podcast_to_process == "ALL" or str(podcast_to_process) == podcast_data["id"] or str(podcast_to_process) == podcast_data["feed"]:
+           if podcast_to_process == "ALL" or str(podcast_to_process) == podcast_data["id"] or str(podcast_to_process) == podcast_data["title"] or str(podcast_to_process) == podcast_data["feed"]:
 
               # logging
               message = 'Processing podcast \'' + podcast_data["title"] + '\''
@@ -567,14 +571,6 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
         print('==========================================================')
 
-#        if config.exception_count > 0:
-#           errors = generalfunctions.read_file(config.log_error_path)
-#           if errors == None:
-#              print('File ' + config.log_error_path + ' does not exists')
-#           else:
-#              print(errors)
-#           print('==========================================================')
-
         if config.count_newpodcasts > 0:
            newpodcasts = generalfunctions.read_file(playlist_path)
            if newpodcasts == None:
@@ -589,12 +585,14 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
            print(message)
            print('==========================================================')
 
-        message = str(config.count_newpodcasts) + ' new podcast'
-        if config.count_newpodcasts == 0 or config.count_newpodcasts >= 2:
-           message += 's'
-        message += '.'
-        print(message)
-        print('==========================================================')
+        if mode == 'PROCESS':
+           message = str(config.count_newpodcasts) + ' new podcast'
+           if config.count_newpodcasts == 0 or config.count_newpodcasts >= 2:
+              message += 's'
+           message += '.'
+           log.log(False, 'INFO', message)
+           print(message)
+           print('==========================================================')
 
     except Exception as e:
         message = e
