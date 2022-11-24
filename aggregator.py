@@ -52,10 +52,18 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
     return downloaded
 
 def strip_tracking(url):
+    chtbl = bool(config.file["chtbl"]["enable"])
+    chrt = bool(config.file["chrt"]["enable"])
     pdcn = bool(config.file["pdcn"]["enable"])
     podtrac = bool(config.file["podtrac"]["enable"])
     op3 = bool(config.file["op3"]["enable"])
 
+    if not chtbl:
+       chtblurl  = str(config.file["chtbl"]["url"])
+       url = url.replace(chtblurl, 'https://')
+    if not chrt:
+       chrturl  = str(config.file["chrt"]["url"])
+       url = url.replace(chrturl, 'https://')
     if not pdcn:
        pdcnurl  = str(config.file["pdcn"]["url"])
        url = url.replace(pdcnurl, 'https://')
