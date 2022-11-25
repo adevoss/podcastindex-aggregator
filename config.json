@@ -8,6 +8,14 @@
     "querystringtracking":{
         "enable":1
     },
+    "chtbl":{
+        "url":"https://chtbl.com/track/11G3D/",
+        "enable":0
+    },
+    "chrt":{
+        "url":"https://chrt.fm/track/E4F779/",
+        "enable":0
+    },
     "podtrac":{
         "url":"https://www.podtrac.com/pts/redirect.mp3/",
         "enable":1
