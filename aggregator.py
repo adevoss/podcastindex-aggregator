@@ -228,6 +228,8 @@ def get_liveitem_url(lit):
     if lit != None and lit != '':
        url = lit.find('enclosure').attrib.get('url')
        if url != None and url != '':
+          # Some url's have two trackers
+          url = strip_tracking(url)
           url = strip_tracking(url)
     return url
 
@@ -467,6 +469,8 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
     if url != None and url != '':
        url = episode["enclosureUrl"]
 
+       # Some url's have two trackers
+       url = strip_tracking(url)
        url = strip_tracking(url)
 
        enclosure_file = os.path.basename(url)
