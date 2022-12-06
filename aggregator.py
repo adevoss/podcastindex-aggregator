@@ -53,26 +53,34 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
 
 def strip_tracking(url):
     chtbl = bool(config.file["chtbl"]["enable"])
-    chrt = bool(config.file["chrt"]["enable"])
-    pdcn = bool(config.file["pdcn"]["enable"])
-    podtrac = bool(config.file["podtrac"]["enable"])
-    op3 = bool(config.file["op3"]["enable"])
+    chtblurl  = str(config.file["chtbl"]["url"])
 
-    if not chtbl:
-       chtblurl  = str(config.file["chtbl"]["url"])
-       url = url.replace(chtblurl, 'https://')
-    if not chrt:
-       chrturl  = str(config.file["chrt"]["url"])
-       url = url.replace(chrturl, 'https://')
-    if not pdcn:
-       pdcnurl  = str(config.file["pdcn"]["url"])
-       url = url.replace(pdcnurl, 'https://')
-    if not podtrac:
-       podtracurl = str(config.file["podtrac"]["url"])
-       url = url.replace(podtracurl, 'https://')
-    if not op3:
-       op3url = str(config.file["op3"]["url"])
-       url = url.replace(op3url, 'https://')
+    chrt = bool(config.file["chrt"]["enable"])
+    chrturl  = str(config.file["chrt"]["url"])
+
+    pdcn = bool(config.file["pdcn"]["enable"])
+    pdcnurl  = str(config.file["pdcn"]["url"])
+
+    podtrac = bool(config.file["podtrac"]["enable"])
+    podtracurl = str(config.file["podtrac"]["url"])
+
+    op3 = bool(config.file["op3"]["enable"])
+    op3url = str(config.file["op3"]["url"])
+
+    i = 1
+    while i <= 2:
+       if not chtbl:
+          url = url.replace(chtblurl, 'https://')
+       if not chrt:
+          url = url.replace(chrturl, 'https://')
+       if not pdcn:
+          url = url.replace(pdcnurl, 'https://')
+       if not podtrac:
+          url = url.replace(podtracurl, 'https://')
+       if not op3:
+          url = url.replace(op3url, 'https://')
+       i += 1
+
     return url
 
 def pi_search_podcast(query):
@@ -228,8 +236,6 @@ def get_liveitem_url(lit):
     if lit != None and lit != '':
        url = lit.find('enclosure').attrib.get('url')
        if url != None and url != '':
-          # Some url's have two trackers
-          url = strip_tracking(url)
           url = strip_tracking(url)
     return url
 
@@ -469,8 +475,6 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
     if url != None and url != '':
        url = episode["enclosureUrl"]
 
-       # Some url's have two trackers
-       url = strip_tracking(url)
        url = strip_tracking(url)
 
        enclosure_file = os.path.basename(url)
