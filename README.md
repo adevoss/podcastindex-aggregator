@@ -7,7 +7,7 @@ Example:
 /path/to/aggregator.py
 
 Options:
-/path/to/aggregator.py [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes]
+/path/to/aggregator.py [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]
 No options is the same as PROCESS ALL
 
 LIST - Show list of podcasts in your podcastlist
