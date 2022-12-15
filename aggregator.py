@@ -156,7 +156,8 @@ def livestream(feed_url, feed_id, feed_title, playlist_path):
 
               if onair:
                  generalfunctions.writetext(playlist_path, message)
-                 print(message)
+                 if verbosity:
+                    print(message)
 
     except Exception as e:
         message = str(e)
@@ -308,9 +309,10 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlist_cl
 
               # logging
               message = 'Processing podcast \'' + podcast_data["title"] + '\''
-              print('==========================================================')
-              print(message)
-              print('==========================================================')
+              if verbosity:
+                 print('==========================================================')
+                 print(message)
+                 print('==========================================================')
               log.log(False, 'INFO', message)
 
               if mode == "LIST":
@@ -371,7 +373,8 @@ def process_chapter(chapter, path, overwrite):
     # logging
     chapter_title = str(chapter["title"][0:50])
     message = 'Processing chapter \'' + chapter_title + '\''
-    print(message)
+    if verbosity:
+       print(message)
     log.log(False, 'INFO', message)
 
     # create directory for chapter
@@ -424,9 +427,10 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
 
     # logging
     message = 'Processing episode \'' + title + '\''
-    print('==========================================================')
-    print(message)
-    print('==========================================================')
+    if verbosity:
+       print('==========================================================')
+       print(message)
+       print('==========================================================')
     log.log(False, 'INFO', message)
 
     # create directory for episode
@@ -564,30 +568,33 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
            process_file(data, datadir, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
 
-        print('==========================================================')
-
-        if config.count_newpodcasts > 0:
-           newpodcasts = generalfunctions.read_file(playlist_path)
-           if newpodcasts == None:
-              print('File ' + playlist_path + ' does not exists')
-           else:
-              print(newpodcasts)
+        if verbosity:
            print('==========================================================')
+
+           if config.count_newpodcasts > 0:
+              newpodcasts = generalfunctions.read_file(playlist_path)
+              if newpodcasts == None:
+                 print('File ' + playlist_path + ' does not exists')
+              else:
+                 print(newpodcasts)
+              print('==========================================================')
 
         message = 'Finished: ' + str(config.exception_count) + ' errors.'
         if config.exception_count > 0:
            message += ' See ' + config.log_error_path 
-           print(message)
-           print('==========================================================')
+           if verbosity:
+              print(message)
+              print('==========================================================')
 
         if mode == 'PROCESS':
            message = str(config.count_newpodcasts) + ' new podcast'
            if config.count_newpodcasts == 0 or config.count_newpodcasts >= 2:
               message += 's'
            message += '.'
-           log.log(False, 'INFO', message)
-           print(message)
-           print('==========================================================')
+           if verbosity:
+              log.log(False, 'INFO', message)
+              print(message)
+              print('==========================================================')
 
     except Exception as e:
         message = e
@@ -601,6 +608,17 @@ try:
     mode = "PROCESS"
     podcast_to_process = "ALL"
     number_of_episodes = 0
+    verbose = 1
+
+    if len(sys.argv) == 5:
+       mode = sys.argv[1]
+       podcast_to_process = sys.argv[2]
+       number_of_episodes = sys.argv[3]
+       verbose = sys.argv[4]
+
+    verbosity = True
+    if int(verbose) == 0:
+       verbosity = False
 
     if len(sys.argv) == 4:
        mode = sys.argv[1]
@@ -616,7 +634,7 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes]')
+       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
     else:
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
           if int(number_of_episodes) == 0:
