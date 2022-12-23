@@ -22,7 +22,7 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
       file_extention = os.path.splitext(file_name)[1]
 
       if file_extention == '.mp3':
-         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True, True)
+         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
 
     except Exception as e:
        message = str('wget')
@@ -35,9 +35,9 @@ def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutR
     try:
        if downloaded >= 10:
           if file_extention == '.mp3':
-             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False, True)
+             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
           else:
-             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False, False)
+             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
 
     except Exception as e:
        message = str('request')
@@ -99,7 +99,10 @@ def livestream(feed_url, feed_id, feed_title, playlist_path):
        message = feed_url + ' not live now'
 
        xml = loadXML_podcast(feed_url)
-       lits = get_liveitems(xml)
+       lits = get_liveitems(xml, 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md')
+       if len(lits) == 0:
+          lits = get_liveitems(xml, 'https://podcastindex.org/namespace/1.0')
+
        if lits != None and len(lits) > 0:
           for lit in lits:
               message = feed_url + ' not live now'
@@ -177,8 +180,8 @@ def loadXML_podcast(feed):
        os.remove(path)
     return root
 
-def get_liveitems(root):
-    podcast = {'podcast': 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md'}
+def get_liveitems(root, namespace):
+    podcast = {'podcast': namespace}
     lits = None
     if root != "" and root != None:
        channel = root.find('channel')
@@ -279,11 +282,11 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
           message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
 
     if not current:
-       log.log(False, 'INFO', message)
+       log.log(False, 'WARN', message)
+       generalfunctions.writetext(playlist_path, message)
        print(message)
 
     if verbose:
-       generalfunctions.writetext(playlist_path, message)
        print(message)
 
 def pi_episodes(feedId, number_of_episodes):
