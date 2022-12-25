@@ -87,9 +87,9 @@ def pi_search_podcast(query):
            print(feed['url'])
     return feeds
 
-def livestream(feed_url, feed_id, feed_title, playlist_path):
+def livestream(feed_url, feed_id, feed_title, playlist_path, livefeed):
     try:
-       tzpretty = "Europe/Amsterdam"
+       tzpretty = str(config.file["settings"]["timezone"])
        now = generalfunctions.now()
        nowTZ = generalfunctions.date_to_tz(now, tzpretty)
        nowseconds = generalfunctions.to_epoch(nowTZ)
@@ -144,17 +144,21 @@ def livestream(feed_url, feed_id, feed_title, playlist_path):
 
               if startdatestring != "":
                  if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
-                    message = title + ' at ' + startdatepretty  + ' on ' + url
+                    message = title + ' at ' + startdatepretty
                     if startdateTZ.date() == nowTZ.date():
-                       message = title + ' today at ' + str(startdateTZ.time()) + ' on ' + url
+                       message = title + ' today at ' + str(startdateTZ.time())
                     if startdateTZ.date() == tomorrowTZ.date():
-                       message = title + ' tomorrow at ' + str(startdateTZ.time()) + ' on ' + url
+                       message = title + ' tomorrow at ' + str(startdateTZ.time())
+                    if not livefeed:
+                       message += ' on ' + url
                     onair = True
                  if enddatestring != "":
                     leadindateTZ = generalfunctions.deltaminutes(startdateTZ, live_leadin)
                     leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
                     if status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ):
-                       message = title + ' NOW on ' + url
+                       message = title + ' NOW'
+                       if not livefeed:
+                          message += ' on ' + url
                        onair = True
 
               if onair:
@@ -300,7 +304,7 @@ def pi_episodes(feedId, number_of_episodes):
        print(message)
     return episodes_result
 
-def process_file(data, data_path, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process):
+def process_file(data, data_path, number_of_episodes, playlist_path, playlistlive_path, playlist_client_path, overwrite, mode, podcast_to_process):
     for podcast_data in data['podcastlist']:
         feedurl = "-"
         verbose = False
@@ -325,7 +329,17 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlist_cl
                  check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlist_path, verbose)
 
               if mode == "LIVE" or mode == "PROCESS":
-                 livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path)
+                 playlistfeed_path = playlist_path
+                 livefeed = bool(podcast_data['live'])
+
+                 if livefeed:
+                    playlistfeed_path = playlistlive_path.replace('live', podcast_data['title'] + 'live')
+                    message = 'Live on ' + str(podcast_data['feed'])
+                    generalfunctions.writetext(playlistfeed_path, message)
+                    if verbosity:
+                       print(message)
+
+                 livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlistfeed_path, livefeed)
 
               if mode == "PROCESS":
                  process_podcast(podcast_data, number_of_episodes, data_path, playlist_path, playlist_client_path, overwrite, mode)
@@ -554,6 +568,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         log.configure(config.log_path, config.log_error_path)
 
         playlist_path = os.path.join(playlist_path, dateString+'.m3u')
+        playlistlive_path = playlist_path.replace(dateString, dateString+'live')
         overwrite = False
 
         # logging
@@ -568,7 +583,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         if mode == 'SEARCH':
            pi_search_podcast(str(podcast_to_process))
         else:
-           process_file(data, datadir, number_of_episodes, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process)
+           process_file(data, datadir, number_of_episodes, playlist_path, playlistlive_path, playlist_client_path, overwrite, mode, podcast_to_process)
 
 
         if verbosity:
