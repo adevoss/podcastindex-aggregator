@@ -4,12 +4,14 @@
             "id": "920666",
             "feed": "http://mp3s.nashownotes.com/pc20rss.xml",
             "title": "Podcasting20",
+            "live": 0,
             "directory": "Tech"
         },
         {
             "id": "000000",
             "feed": "http://www.server.com/podcast/rss.xml",
             "title": "Podcast2",
+            "live": 0,
             "directory": "Subdirectory"
         }
     ]

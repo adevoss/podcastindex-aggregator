@@ -38,5 +38,6 @@ podcastlist.json:
 - id: search for the id on https://podcastindex.org. The id is at the end of the url.
 - title: Used for creating directory.
 - feed: feed of podcast to avoid api call with hivewatcher
+- live: Indicates if feed is a feed with liveItem tags [0|1]. Creates a separate playlist.
 - directory: Subdirectory of 'data' (see above) to store the podcast in.
 
