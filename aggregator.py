@@ -160,7 +160,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, livefeed):
                     leadindateTZ = generalfunctions.deltaminutes(startdateTZ, live_leadin)
                     leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
                     if status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ):
-                       ptefix = prefix_live
+                       prefix = prefix_live
                        message = title + ' NOW'
                        if not livefeed:
                           message += ' on ' + url
