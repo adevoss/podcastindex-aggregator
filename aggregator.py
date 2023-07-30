@@ -641,10 +641,10 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 try:
     config.file = config.read_file() 
 
-    prefix_error = "[ERROR] "
-    prefix_file = "[FILE] "
-    prefix_stream = "[STREAM] "
-    prefix_live = "[LIVE] "
+    prefix_error = config.file["settings"]["prefix_error"]
+    prefix_file = config.file["settings"]["prefix_file"]
+    prefix_stream = config.file["settings"]["prefix_stream"]
+    prefix_live = config.file["settings"]["prefix_live"]
 
     mode = "PROCESS"
     podcast_to_process = "ALL"
