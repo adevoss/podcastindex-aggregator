@@ -102,11 +102,15 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, livefeed):
        lits = get_liveitems(xml, 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md')
        if len(lits) == 0:
           lits = get_liveitems(xml, 'https://podcastindex.org/namespace/1.0')
+       # TODO
+       #lits = get_liveitems_api(feed_id)
 
        if lits != None and len(lits) > 0:
           for lit in lits:
               message = feed_url + ' not live now'
+              prefix = prefix_stream
               onair = False
+
               status = get_liveitem_status(lit)
               start = get_liveitem_start(lit)
               end = get_liveitem_end(lit)
@@ -156,13 +160,19 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, livefeed):
                     leadindateTZ = generalfunctions.deltaminutes(startdateTZ, live_leadin)
                     leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
                     if status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ):
+                       prefix = prefix_live
                        message = title + ' NOW'
                        if not livefeed:
                           message += ' on ' + url
                        onair = True
 
               if onair:
-                 generalfunctions.writetext(playlist_path, message)
+                 if livefeed:
+                    playlistfeed_path = playlistlive_path.replace('live', podcast_data['title'] + '-Live')
+                    message = 'Live NOW on ' + str(podcast_data['feed'])
+                    generalfunctions.writetext(playlistfeed_path, message)
+                 else:
+                    generalfunctions.writetext(playlist_path, prefix + message)
                  if verbosity:
                     print(message)
 
@@ -183,6 +193,20 @@ def loadXML_podcast(feed):
     finally:
        os.remove(path)
     return root
+
+def get_liveitems_api(feedId):
+    PIurl = config.file["podcastindex"]["url"]
+    url = PIurl + "episodes/live/byfeedid?id=" + str(feedId) + "&max=" + str(number_of_episodes)
+    url = PIurl + "episodes/live/byfeedid?id=" + str(feedId)
+    url = PIurl + "episodes/live?pretty"
+    lits = PIfunctions.request(url)
+    print(lits)
+    if lits == None:
+       config.exception_count += 1
+       message = 'No data returned from podcastindex API call: ' + url
+       log.log(True, 'ERROR', message)
+       print(message)
+    return lits
 
 def get_liveitems(root, namespace):
     podcast = {'podcast': namespace}
@@ -275,8 +299,9 @@ def check_podcast_feed(title, feedId, feedurl, playlist_path, verbose):
     current = False
     feedurlPI = pi_search_podcast_by_id(feedId)
     if feedurlPI == None:
-       message = 'Podcasts can\'t be checked.'
+       message = 'Feed url of \'' + title + '\' can\'t be checked.'
        log.log(True, 'ERROR', message)
+       message = prefix_error+message
        print(message)
     else:
        if feedurl == feedurlPI:
@@ -331,13 +356,6 @@ def process_file(data, data_path, number_of_episodes, playlist_path, playlistliv
               if mode == "LIVE" or mode == "PROCESS":
                  playlistfeed_path = playlist_path
                  livefeed = bool(podcast_data['live'])
-
-                 if livefeed:
-                    playlistfeed_path = playlistlive_path.replace('live', podcast_data['title'] + 'live')
-                    message = 'Live on ' + str(podcast_data['feed'])
-                    generalfunctions.writetext(playlistfeed_path, message)
-                    if verbosity:
-                       print(message)
 
                  livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlistfeed_path, livefeed)
 
@@ -486,7 +504,7 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
        downloaded = download(url, enclosure_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
        if downloaded == 0:
           config.count_newpodcasts += 1
-          generalfunctions.writetext(playlist_path, enclosure_client_path)
+          generalfunctions.writetext(playlist_path, prefix_file + enclosure_client_path)
        if downloaded >= 10:
           config.exception_count += 1
           message = 'Podcast not downloaded. Returncode: ' + str(downloaded)
@@ -622,6 +640,11 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
 try:
     config.file = config.read_file() 
+
+    prefix_error = "[ERROR] "
+    prefix_file = "[FILE] "
+    prefix_stream = "[STREAM] "
+    prefix_live = "[LIVE] "
 
     mode = "PROCESS"
     podcast_to_process = "ALL"
