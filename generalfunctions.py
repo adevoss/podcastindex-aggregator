@@ -86,6 +86,9 @@ def sanitize_path(path, isFileName):
         sanitized = sanitized.replace('....', '')
         sanitized = sanitized.replace('...', '')
         sanitized = sanitized.replace('..', '')
+        # remove '.' if last character of directory is '.'
+        if sanitized[len(sanitized)-1] == '.':
+           sanitized = sanitized[0:len(sanitized)-1]
     return sanitized
 
 def read_file(path):
