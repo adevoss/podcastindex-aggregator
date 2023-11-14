@@ -529,7 +529,8 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
            chapters = generalfunctions.read_json(chapter_file)
            if chapters != None and chapters != '':
               for (chapter) in chapters["chapters"]:
-                  process_chapter(chapter, chapter_path, overwrite)
+                  if chapter["toc"] == None or chapter["toc"]:
+                     process_chapter(chapter, chapter_path, overwrite)
         else: 
            config.exception_count += 1
            message = 'Podcast chapters not downloaded. Returncode: ' + str(downloaded)
