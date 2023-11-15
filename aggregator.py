@@ -527,9 +527,15 @@ def process_episode(episode, path, overwrite, playlist_path, podcast_client_path
 
            # download chapters
            chapters = generalfunctions.read_json(chapter_file)
+
            if chapters != None and chapters != '':
-              for (chapter) in chapters["chapters"]:
-                  if chapter["toc"] == None or chapter["toc"]:
+              for chapter in chapters["chapters"]:
+                  toc = True
+                  for key,value in chapter.items():
+                      if key == "toc":
+                         toc = bool(value)
+
+                  if toc:
                      process_chapter(chapter, chapter_path, overwrite)
         else: 
            config.exception_count += 1
