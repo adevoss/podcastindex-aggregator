@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as DP
 import pytz
+import urllib.parse
 
 
 def log_handler_file(filename):
@@ -29,8 +30,8 @@ def writetext(path, message):
         outfile.write(message)
 
 def create_directory(path):
-    if not os.path.isdir(path):
-        os.makedirs(path)
+    if not os.path.exists(path):
+       os.makedirs(path)
 
 def bar_custom(current, total, width=80):
     print('Downloading: %d%% [%d / %d] bytes' % (current / total * 100, current, total))
@@ -43,7 +44,8 @@ def download(url, path, overwrite, querystringtracking, timeout_connect, timeout
 
     if url != None and url !='':
        if not querystringtracking:
-          url = url.split('?')[0]
+          url = strip_querystring(url)
+          path = strip_querystring(path)
        if path != None and path !='':
           path = sanitize(path)
           if (os.path.exists(path) and overwrite) or not os.path.exists(path):
@@ -91,8 +93,11 @@ def sanitize_path(path, isFileName):
            sanitized = sanitized[0:len(sanitized)-1]
     return sanitized
 
-def read_file(path):
+def read_file(path, querystringtracking):
     text = None
+    if not querystringtracking:
+       path = strip_querystring(path)
+
     if os.path.exists(path):
        with open(path, "r") as file: 
            text = file.read()
@@ -102,8 +107,10 @@ def write_file(path, text):
     with open(path, "w") as outfile: 
         outfile.write(text)
 
-def read_json(path):
+def read_json(path, querystringtracking):
     json_text = None
+    if not querystringtracking:
+       path = strip_querystring(path)
     with open(path, 'r', encoding="utf-8-sig") as openfile: 
          text = openfile.read()
          openfile.close()
@@ -174,3 +181,18 @@ def to_boolean(text):
     if text.lower() == "true":
        status = True
     return status
+
+def html_encode(string):
+    print(string)
+    safe_string = urllib.parse.quote(string)
+    print(safe_string)
+    return safe_string
+
+def samba_encode(string):
+    safe_string = string.replace("%3A", "%C3%B7")
+    safe_string = string.replace("%7C", "%C2%A6")
+    return safe_string
+
+def strip_querystring(path):
+    path = path.rsplit('?', 1)[0]
+    return path
