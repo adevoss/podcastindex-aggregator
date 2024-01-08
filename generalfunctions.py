@@ -189,8 +189,11 @@ def html_encode(string):
     return safe_string
 
 def samba_encode(string):
-    safe_string = string.replace("%3A", "%C3%B7")
-    safe_string = string.replace("%7C", "%C2%A6")
+    safe_string = string
+    safe_string = safe_string.replace("%22", "%C2%A8")
+    safe_string = safe_string.replace("%3A", "%C3%B7")
+    safe_string = safe_string.replace("%3F", "%C2%BF")
+    safe_string = safe_string.replace("%7C", "%C2%A6")
     return safe_string
 
 def strip_querystring(path):
