@@ -183,9 +183,7 @@ def to_boolean(text):
     return status
 
 def html_encode(string):
-    print(string)
     safe_string = urllib.parse.quote(string)
-    print(safe_string)
     return safe_string
 
 def samba_encode(string):
