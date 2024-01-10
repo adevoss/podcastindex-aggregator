@@ -50,42 +50,21 @@ def addto_playlist_m3u(playlist_path, path_name, podcast_title, episode, length,
     generalfunctions.writetext(playlist_path, line)
 
 
-def download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead):
+def download(url, path, overwrite, querystringtracking):
     downloaded = 100
 
     try:
       file_name = os.path.basename(path)
       file_extention = os.path.splitext(file_name)[1]
 
-      if file_extention == '.mp3':
-         downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, True, True)
+      downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, True, True)
 
     except Exception as e:
        config.exception_count += 1
-       message = "Function: download: " + str('wget')
+       message = "Function: download: " + str(url)
        log.log(True, 'WARN', message)
        message = str(e)
        log.log(True, 'WARN', message)
-       message = str(url)
-       log.log(True, 'WARN', message)
-
-    try:
-       if downloaded >= 10:
-          if file_extention == '.mp3':
-             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
-          else:
-             downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead, False, False)
-
-    except Exception as e:
-       config.exception_count += 1
-       message = "Function: download: " + str('request')
-       log.log(True, 'ERROR', message)
-       message = str(e)
-       log.log(True, 'ERROR', message)
-       print(message)
-       message = str(url)
-       log.log(True, 'ERROR', message)
-       print(message)
 
     return downloaded
 
@@ -440,7 +419,7 @@ def process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_pat
               if url != None and url != '':
                  path = os.path.basename(url)
                  path = os.path.join(podcast_path, path)
-                 downloaded = download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+                 downloaded = download(url, path, overwrite, querystringtracking)
                  if downloaded >= 10:
                     config.exception_count += 1
                     message = 'Podcast image (' + url + ') not downloaded. Returncode: ' + str(downloaded)
@@ -459,7 +438,7 @@ def process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_pat
 def process_chapter(chapter, path, overwrite, querystringtracking):
     try:
         # logging
-        chapter_title = str(chapter["title"][0:50])
+        chapter_title = str(chapter["title"][0:80])
         message = 'Processing chapter \'' + chapter_title + '\''
         if verbosity:
            print(message)
@@ -486,7 +465,7 @@ def process_chapter(chapter, path, overwrite, querystringtracking):
             file_extension = generalfunctions.file_extension(path)
             if file_extension == '.png' or file_extension == '.jpg' or file_extension == '.jpeg':
                 path = os.path.join(chapter_path, path)
-                generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+                generalfunctions.download(url, path, overwrite, querystringtracking)
 
         # url
         if "url" in chapter:
@@ -503,11 +482,17 @@ def process_chapter(chapter, path, overwrite, querystringtracking):
                     path = os.path.join(chapter_path, file_name+'-'+dateFormatted+file_extension)
 
                 path = os.path.join(chapter_path, path)
-                generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+                generalfunctions.download(url, path, overwrite, querystringtracking)
 
     except Exception as e:
         config.exception_count += 1
-        message = 'Function: process_chapter: ' + str(e)
+        message = "Function: process_chapter: '" + chapter + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_chapter: '" + path + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_chapter: '" + str(e)
         log.log(True, 'ERROR', message)
         print(message)
 
@@ -545,7 +530,7 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
             path = os.path.basename(url)
             #path = path.split('?')[0]
             path = os.path.join(episode_path, path)
-            generalfunctions.download(url, path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+            generalfunctions.download(url, path, overwrite, querystringtracking)
 
         # enclosure url
         url = episode["enclosureUrl"]
@@ -559,8 +544,12 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
            enclosure_path = os.path.join(episode_path, enclosure_file)
            enclosure_client_path = os.path.join(episode_client_path, enclosure_file)
 
-           downloaded = download(url, enclosure_path, overwrite, querystringtracking, timeoutConnect, timeoutRead)
+           downloaded = download(url, enclosure_path, overwrite, querystringtracking)
            if downloaded == 0:
+              message = "Downloaded: " + url
+              log.log(False, 'INFO', message)
+              message = "Downloaded: " + enclosure_path
+              log.log(False, 'INFO', message)
               config.count_newpodcasts += 1
               generalfunctions.writetext(playlisttxt_path, prefix_file + enclosure_client_path)
               addto_playlist_m3u(playlist_path, enclosure_client_path, podcast_title, title, length, dateString, config.count_newpodcasts, "/")
@@ -574,7 +563,7 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
         if url != None and url != '':
             path = os.path.basename(url)
             path = os.path.join(episode_path, path)
-            downloaded = generalfunctions.download(url, path, True, querystringtracking, timeoutConnect, timeoutRead)
+            downloaded = generalfunctions.download(url, path, True, querystringtracking)
             if downloaded == 0:
                chapter_file = path
 
@@ -605,11 +594,20 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
         if url != None and url != '':
             path = os.path.basename(url)
             path = os.path.join(episode_path, path)
-            generalfunctions.download(url, path, True, querystringtracking, timeoutConnect, timeoutRead)
+            generalfunctions.download(url, path, True, querystringtracking)
 
     except Exception as e:
         config.exception_count += 1
-        message = 'Function: process_episode: ' + str(e)
+        message = "Function: process_episode: '" + title + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_episode: '" + url + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_episode: '" + path + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_episode: " + str(e)
         log.log(True, 'ERROR', message)
         print(message)
 
@@ -761,9 +759,6 @@ try:
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
           if int(number_of_episodes) == 0:
              number_of_episodes = int(config.file["settings"]["numberOfEpisodes"])
-
-          timeoutConnect = int(config.file["settings"]["timeoutConnect"])
-          timeoutRead = int(config.file["settings"]["timeoutRead"])
 
           aggregate(mode, podcast_to_process, number_of_episodes)
 
