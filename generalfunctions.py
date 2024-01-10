@@ -10,6 +10,7 @@ import pathlib
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from dateutil import parser as DP
+from urllib.request import urlretrieve
 import pytz
 import urllib.parse
 
@@ -33,10 +34,7 @@ def create_directory(path):
     if not os.path.exists(path):
        os.makedirs(path)
 
-def bar_custom(current, total, width=80):
-    print('Downloading: %d%% [%d / %d] bytes' % (current / total * 100, current, total))
-
-def download(url, path, overwrite, querystringtracking, timeout_connect, timeout_read, progress=False, verbose=True):
+def download(url, path, overwrite, querystringtracking, progress=False, verbose=True):
     # 0 = success
     # 1 = already downloaded
     # 10 = failed
@@ -44,21 +42,17 @@ def download(url, path, overwrite, querystringtracking, timeout_connect, timeout
 
     if url != None and url !='':
        if not querystringtracking:
-          url = strip_querystring(url)
-          path = strip_querystring(path)
+          url = strip_querystring_url(url)
+          path = strip_querystring_path(path)
        if path != None and path !='':
           path = sanitize(path)
+
           if (os.path.exists(path) and overwrite) or not os.path.exists(path):
              message = 'Downloading \'' + os.path.basename(path) + '\' ...'
              if verbose:
                 print(message)
 
-             if not progress:
-                r = requests.get(url, timeout=(timeout_connect,timeout_read))
-                with open(path, 'wb') as outfile:
-                     outfile.write(r.content)
-             else:
-                wget.download(url, out=path, bar=bar_custom)
+             urlretrieve(url, path)
              downloaded = 0
           else:
              downloaded = 1
@@ -96,7 +90,7 @@ def sanitize_path(path, isFileName):
 def read_file(path, querystringtracking):
     text = None
     if not querystringtracking:
-       path = strip_querystring(path)
+       path = strip_querystring_path(path)
 
     if os.path.exists(path):
        with open(path, "r") as file: 
@@ -110,7 +104,7 @@ def write_file(path, text):
 def read_json(path, querystringtracking):
     json_text = None
     if not querystringtracking:
-       path = strip_querystring(path)
+       path = strip_querystring_path(path)
     with open(path, 'r', encoding="utf-8-sig") as openfile: 
          text = openfile.read()
          openfile.close()
@@ -194,6 +188,14 @@ def samba_encode(string):
     safe_string = safe_string.replace("%7C", "%C2%A6")
     return safe_string
 
-def strip_querystring(path):
+def strip_querystring_url(path):
     path = path.rsplit('?', 1)[0]
     return path
+
+def strip_querystring_path(path):
+    path_split = path.rsplit('?', 1)
+    path_stripped = path_split[0]
+    if len(path_split) > 1:
+       if path_split[1][0] == "/" or path_split[1][0] == " ":
+          path_stripped = path
+    return path_stripped

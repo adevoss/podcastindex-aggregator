@@ -44,8 +44,6 @@
         "announceLive":"24",
         "leadinLive":"15",
         "leadoutLive":"15",
-        "timeoutConnect":5,
-        "timeoutRead":3,
         "prefix_error":"[ERROR] ",
         "prefix_file":"[FILE] ",
         "prefix_stream":"[STREAM] ",
