@@ -111,7 +111,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
        tzpretty = str(config.file["settings"]["timezone"])
        now = generalfunctions.now()
        nowTZ = generalfunctions.date_to_tz(now, tzpretty)
-       nowseconds = generalfunctions.to_epoch(nowTZ)
+       nowseconds = generalfunctions.to_timestamp(nowTZ)
        nowstring = generalfunctions.format_dateYYYMMDDHHMM(nowTZ)
        formatpretty = "%H:%M %m/%d/%Y"
        tomorrowTZ = generalfunctions.tomorrow()
@@ -147,12 +147,12 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
                  startdateTZ = generalfunctions.date_to_tz(startdate, tzpretty)
                  startdatestring = generalfunctions.format_dateYYYMMDDHHMM(startdateTZ)
                  startdatepretty = startdateTZ.strftime(formatpretty)
-                 startdateseconds = generalfunctions.to_epoch(startdateTZ)
+                 startdateseconds = generalfunctions.to_timestamp(startdateTZ)
 
                  live_announce_hours = int(config.file["settings"]["announceLive"])
                  live_announce_seconds = live_announce_hours * 3600
                  announceseconds = nowseconds + live_announce_seconds
-                 announcedate = generalfunctions.to_date(announceseconds)
+                 announcedate = generalfunctions.timestamp_to_UTCdate(announceseconds)
                  announcedateTZ = generalfunctions.date_to_tz(announcedate, tzpretty)
 
                  live_leadin = -int(config.file["settings"]["leadinLive"])
@@ -219,7 +219,6 @@ def get_liveitems_api(feedId):
     url = PIurl + "episodes/live/byfeedid?id=" + str(feedId)
     url = PIurl + "episodes/live?pretty"
     lits = PIfunctions.request(url)
-    print(lits)
     if lits == None:
        config.exception_count += 1
        message = 'No data returned from podcastindex API call: ' + url
@@ -289,7 +288,7 @@ def pi_search_podcast_by_feed(feed):
 def pi_search_podcast_by_id(feedId):
     feed_url = None
     PIurl = config.file["podcastindex"]["url"]
-    url = PIurl + "podcasts/byfeedid?id=" + feedId + "&pretty"
+    url = PIurl + "podcasts/byfeedid?id=" + str(feedId) + "&pretty"
     search_result = PIfunctions.request(url)
     if search_result == None:
        config.exception_count += 1
@@ -299,7 +298,10 @@ def pi_search_podcast_by_id(feedId):
     else:
        status = generalfunctions.to_boolean(search_result['status'])
        if status:
-          feed_url = search_result['feed']['url']
+          if len(search_result['feed']) > 0:
+             feed_url = search_result['feed']['url']
+          else:
+             feed_url = ""
     return feed_url
 
 def pi_podcastdata(feedId):
@@ -316,7 +318,7 @@ def pi_podcastdata(feedId):
 
 def check_podcast_feed(title, feedId, feedurl, playlisttxt_path, verbose):
     current = False
-    feedurlPI = pi_search_podcast_by_id(feedId)
+    feedurlPI = pi_search_podcast_by_id(int(feedId))
     if feedurlPI == None:
        message = 'Feed url of \'' + title + '\' can\'t be checked.'
        log.log(True, 'ERROR', message)
@@ -325,9 +327,14 @@ def check_podcast_feed(title, feedId, feedurl, playlisttxt_path, verbose):
     else:
        if feedurl == feedurlPI:
           current = True
-          message = 'Checking feed url of ' + title + ' - ' + feedurl
+          message = 'Checked feed url of ' + title + ' - ' + feedurl
        else:
-          message = title + ' - feed url has changed from ' + feedurl + ' to ' + feedurlPI + ' *** Please edit podcast list'
+          if feedurlPI == "":
+             message = title + " - feed url has been removed. *** Please edit podcast list"
+          else:
+             message = title + " - feed url has changed from '" + feedurl + "' to '" + str(feedurlPI) + "' *** Please edit podcast list"
+          print(message)
+    return current
 
     if not current:
        log.log(False, 'WARN', message)
@@ -372,15 +379,16 @@ def process_file(data, data_path, number_of_episodes, playlisttxt_path, playlist
                      print(podcast_data['title'] + ' ' + podcast_data['id'])
 
                   if mode == "CHECK" or mode == "PROCESS":
-                     check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlisttxt_path, verbose)
+                     currentFeed = check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlisttxt_path, verbose)
 
-                  if mode == "LIVE" or mode == "PROCESS":
-                     livefeed = bool(podcast_data['live'])
+                  if currentFeed:
+                     if mode == "LIVE" or mode == "PROCESS":
+                        livefeed = bool(podcast_data['live'])
 
-                     livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, playlisttxt_path, livefeed)
+                        livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, playlisttxt_path, livefeed)
 
-                  if mode == "PROCESS":
-                     process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_path, playlist_path, playlist_client_path, overwrite, mode, querystringtracking)
+                     if mode == "PROCESS":
+                        process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_path, playlist_path, playlist_client_path, overwrite, mode, querystringtracking)
             else:
                if podcast_to_process == "ALL":
                   message = 'Skipping podcast \'' + podcast_data["title"] + '\''
@@ -419,10 +427,21 @@ def process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_pat
               if url != None and url != '':
                  path = os.path.basename(url)
                  path = os.path.join(podcast_path, path)
-                 downloaded = download(url, path, overwrite, querystringtracking)
+                 downloaded = download(url, path, overwrite, False)
                  if downloaded >= 10:
                     config.exception_count += 1
                     message = 'Podcast image (' + url + ') not downloaded. Returncode: ' + str(downloaded)
+                    log.log(True, 'ERROR', message)
+
+              # artwork
+              url = feed["artwork"]
+              if url != None and url != '':
+                 path = os.path.basename(url)
+                 path = os.path.join(podcast_path, path)
+                 downloaded = download(url, path, overwrite, False)
+                 if downloaded >= 10:
+                    config.exception_count += 1
+                    message = 'Podcast artwork (' + url + ') not downloaded. Returncode: ' + str(downloaded)
                     log.log(True, 'ERROR', message)
 
               # process episodes
@@ -503,7 +522,9 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
         title = generalfunctions.sanitize_path(title, False)
         title = title.replace('/', '')
         length = episode["duration"]
-        dateString = episode["datePublishedPretty"]
+        timestamp_episode = int(episode["datePublished"])
+        date_episode = generalfunctions.timestamp_to_date(timestamp_episode)
+        dateString = generalfunctions.format_date(date_episode, config.file["settings"]["formatdatetime"])
 
         # logging
         message = 'Processing episode \'' + title + '\''
@@ -526,6 +547,8 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
 
         # image
         url = episode["image"]
+        url_split = url.rsplit('?', -1)
+        url = url_split[0]
         if url != None and url != '':
             path = os.path.basename(url)
             #path = path.split('?')[0]

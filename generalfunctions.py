@@ -132,6 +132,10 @@ def format_dateIS8601(date, format):
     formatted = dateISO8601.strftime(format)
     return formatted
 
+def format_date(date, format):
+    formatted = date.strftime(format)
+    return formatted
+
 def string_to_date(date):
     dateISO8601 = DP.parse(date)
     return dateISO8601
@@ -162,12 +166,12 @@ def deltaminutes(date, delta):
     date = date + relativedelta(minutes=delta)
     return date
 
-def to_epoch(date):
-    epoch = date.timestamp()
-    return epoch
+def to_timestamp(date):
+    timestamp = date.timestamp()
+    return timestamp
 
-def to_date(epoch):
-    date = datetime.fromtimestamp(epoch)
+def timestamp_to_date(timestamp):
+    date = datetime.fromtimestamp(timestamp)
     return date
 
 def to_boolean(text):
