@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
-import csv
 import os
 import requests
-import wget
 import json
 import pathlib
 from datetime import datetime, timedelta
@@ -52,8 +50,11 @@ def download(url, path, overwrite, querystringtracking, progress=False, verbose=
              if verbose:
                 print(message)
 
-             urlretrieve(url, path)
-             downloaded = 0
+             response = requests.get(url)
+             if (response.ok and response.status_code == 200) or (response.status_code == 400 and not response.ok):
+                with open(path, mode="wb") as f:
+                     f.write(response.content)
+                downloaded = 0
           else:
              downloaded = 1
        else:
@@ -87,11 +88,8 @@ def sanitize_path(path, isFileName):
            sanitized = sanitized[0:len(sanitized)-1]
     return sanitized
 
-def read_file(path, querystringtracking):
+def read_file(path):
     text = None
-    if not querystringtracking:
-       path = strip_querystring_path(path)
-
     if os.path.exists(path):
        with open(path, "r") as file: 
            text = file.read()
@@ -101,10 +99,8 @@ def write_file(path, text):
     with open(path, "w") as outfile: 
         outfile.write(text)
 
-def read_json(path, querystringtracking):
+def read_json(path):
     json_text = None
-    if not querystringtracking:
-       path = strip_querystring_path(path)
     with open(path, 'r', encoding="utf-8-sig") as openfile: 
          text = openfile.read()
          openfile.close()
@@ -115,7 +111,10 @@ def read_json(path, querystringtracking):
     if '<!DOCTYPE HTML>' in text:
        message = 'Text is HTML not JSON.'
     else:
-       json_text = json.loads(text)
+       try:
+          json_text = json.loads(text)
+       except Exception as e:
+          json_text = "ERROR"
 
     return json_text
 
@@ -187,6 +186,7 @@ def html_encode(string):
 def samba_encode(string):
     safe_string = string
     safe_string = safe_string.replace("%22", "%C2%A8")
+    safe_string = safe_string.replace("%2A", "%C2%A4")
     safe_string = safe_string.replace("%3A", "%C3%B7")
     safe_string = safe_string.replace("%3F", "%C2%BF")
     safe_string = safe_string.replace("%7C", "%C2%A6")
