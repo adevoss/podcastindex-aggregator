@@ -55,6 +55,8 @@ def download(url, path, overwrite, querystringtracking, progress=False, verbose=
                 with open(path, mode="wb") as f:
                      f.write(response.content)
                 downloaded = 0
+             else:
+                downloaded = response.status_code
           else:
              downloaded = 1
        else:

@@ -51,10 +51,17 @@ def addto_playlist_m3u(playlist_path, path_name, podcast_title, episode, length,
 
 
 def download(url, path, overwrite, querystringtracking):
-    downloaded = 100
+    downloaded = 999
 
     try:
       downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, True, True)
+      if downloaded > 1:
+         config.exception_count += 1
+         message = url
+         log.log(True, 'WARN', message)
+         message = "Download FAILED: HTTP status code: " + str(downloaded)
+         log.log(True, 'WARN', message)
+
 
     except Exception as e:
        config.exception_count += 1
@@ -474,7 +481,7 @@ def process_chapter(chapter, path, overwrite, querystringtracking):
         generalfunctions.write_file(path, json.dumps(chapter, indent = 2))
 
         # image
-        if "img" in chapter:
+        if "img" in chapter and chapter["img"] != None and chapter["img"] != "":
             url = chapter["img"]
             path = os.path.basename(url)
             file_name = generalfunctions.file_name_noextension(path)
@@ -483,7 +490,7 @@ def process_chapter(chapter, path, overwrite, querystringtracking):
             downloaded = download(url, path, overwrite, querystringtracking)
 
         # url
-        if "url" in chapter:
+        if "url" in chapter and chapter["url"] != None and chapter["url"] != "":
             url = chapter["url"]
             path = os.path.basename(url)
             file_name = generalfunctions.file_name_noextension(path)
@@ -589,6 +596,7 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
                generalfunctions.create_directory(path)
                chapter_path = path
 
+
                # download chapters
                chapters = generalfunctions.read_json(chapter_file)
 
@@ -618,6 +626,8 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
             path = os.path.basename(url)
             path = os.path.join(episode_path, path)
             generalfunctions.download(url, path, True, querystringtracking)
+
+
 
     except Exception as e:
         config.exception_count += 1
