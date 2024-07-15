@@ -18,7 +18,8 @@ def addto_playlist_m3u(playlist_path, path_name, podcast_title, episode, length,
     if count == 1:
        generalfunctions.writetext(playlist_path, "#EXTM3U")
 
-    line = "#EXTINF:" + str(length) + "," + podcast_title + " - " + episode + " - " + dateString
+    #line = "#EXTINF:" + str(length) + "," + podcast_title + " - " + episode + " - " + dateString
+    line = "#EXTINF:" + str(length) + "," + episode + " - " + dateString
     generalfunctions.writetext(playlist_path, line)
 
     if path_name[0:4].lower() == "http":
@@ -54,7 +55,7 @@ def download(url, path, overwrite, querystringtracking):
     downloaded = 999
 
     try:
-      downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, True, True)
+      downloaded = generalfunctions.download(url, path, overwrite, querystringtracking, False, False)
       if downloaded > 1:
          config.exception_count += 1
          message = url
@@ -337,6 +338,8 @@ def check_podcast_feed(title, feedId, feedurl, playlisttxt_path, verbose):
              message = title + " - feed url has been removed. *** Please edit podcast list"
           else:
              message = title + " - feed url has changed from '" + feedurl + "' to '" + str(feedurlPI) + "' *** Please edit podcast list"
+          log.log(True, 'ERROR', message)
+          generalfunctions.writetext(playlisttxt_path, message)
           print(message)
     return current
 
@@ -579,8 +582,9 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
               addto_playlist_m3u(playlist_path, enclosure_client_path, podcast_title, title, length, dateString, config.count_newpodcasts, "/")
            if downloaded >= 10:
               config.exception_count += 1
-              message = 'Podcast not downloaded. Returncode: ' + str(downloaded)
+              message = "Podcast '" + podcast_title + " - " + title + "' not downloaded. Returncode: " + str(downloaded)
               log.log(True, 'ERROR', message)
+              generalfunctions.writetext(playlisttxt_path, prefix_error + message)
 
         # chapters
         url = episode["chaptersUrl"]
@@ -758,10 +762,11 @@ try:
     prefix_stream = config.file["settings"]["prefix_stream"]
     prefix_live = config.file["settings"]["prefix_live"]
 
+    number_of_episodes = config.file["settings"]["numberOfEpisodes"]
+    verbose = config.file["settings"]["verbosity"]
+
     mode = "PROCESS"
     podcast_to_process = "ALL"
-    number_of_episodes = 0
-    verbose = 1
 
     if len(sys.argv) == 5:
        mode = sys.argv[1]
@@ -790,8 +795,7 @@ try:
        print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
     else:
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
-          if int(number_of_episodes) == 0:
-             number_of_episodes = int(config.file["settings"]["numberOfEpisodes"])
+          number_of_episodes = int(config.file["settings"]["numberOfEpisodes"])
 
           aggregate(mode, podcast_to_process, number_of_episodes)
 

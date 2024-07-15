@@ -32,7 +32,7 @@ def create_directory(path):
     if not os.path.exists(path):
        os.makedirs(path)
 
-def download(url, path, overwrite, querystringtracking, progress=False, verbose=True):
+def download(url, path, overwrite, querystringtracking, progress=False, verbose=False):
     # 0 = success
     # 1 = already downloaded
     # 10 = failed
