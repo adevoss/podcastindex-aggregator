@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import config
+import configuration as config
 import log
 
 from datetime import date
@@ -22,7 +22,7 @@ import time
 def request_header():
     # setup some basic vars for the search api. 
     # for more information, see https://api.podcastindex.org/developer_docs
-    global config
+    config.read()
     api_key = config.file["podcastindex"]["key"]
     api_secret = config.file["podcastindex"]["secret"]
 

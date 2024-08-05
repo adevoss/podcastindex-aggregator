@@ -5,7 +5,7 @@ import os
 import json
 
 def read():
-    global config
+    global file
     with open("/etc/podcastindex/config.json") as config_file:
-         config = json.load(config_file)
+         file = json.load(config_file)
 
