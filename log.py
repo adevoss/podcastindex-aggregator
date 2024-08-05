@@ -4,42 +4,49 @@ import sys
 import os
 import logging
 
-import config
 import generalfunctions
 
 def configure(filename_app, filename_error):
+    global logger_app
+    global logger_error
+
+    logger_app = logging.getLogger("app")
+    logger_error = logging.getLogger("error")
+    logger_app.setLevel(logging.INFO)
+    logger_app.setLevel(logging.DEBUG)
+
     formatter_app = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    handler = generalfunctions.log_handler_file(filename_app)
-    handler.setFormatter(formatter_app)
-    config.logger_app.setLevel(logging.INFO)
-    config.logger_app.addHandler(handler)
+    fileHandler_app = logging.FileHandler(filename_app, mode='a', encoding='utf-8', delay=True)
+    fileHandler_app.setFormatter(formatter_app)
 
     formatter_error = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-    handler = generalfunctions.log_handler_file(filename_error)
-    handler.setFormatter(formatter_error)
-    config.logger_error.setLevel(logging.DEBUG)
-    config.logger_error.addHandler(handler)
+    fileHandler_error = logging.FileHandler(filename_error, mode='a', encoding='utf-8', delay=True)
+    fileHandler_error.setFormatter(formatter_error)
+
+    logger_app.addHandler(fileHandler_app)
+    logger_error.addHandler(fileHandler_error)
+
 
 def log(isErrorLogger, level, message):
     if isErrorLogger:
        if level == 'DEBUG':
-          config.logger_error.debug(message)
+          logger_error.debug(message)
        if level == 'INFO':
-          config.logger_error.info(message)
+          logger_error.info(message)
        if level == 'WARN':
-          config.logger_error.warn(message)
+          logger_error.warn(message)
        if level == 'ERROR':
-          config.logger_error.error(message)
+          logger_error.error(message)
        if level == 'CRITICAL':
-          config.logger_error.critical(message)
+          logger_error.critical(message)
     else:
        if level == 'DEBUG':
-          config.logger_app.debug(message)
+          logger_app.debug(message)
        if level == 'INFO':
-          config.logger_app.info(message)
+          logger_app.info(message)
        if level == 'WARN':
-          config.logger_app.warn(message)
+          logger_app.warn(message)
        if level == 'ERROR':
-          config.logger_app.error(message)
+          logger_app.error(message)
        if level == 'CRITICAL':
-          config.logger_app.critical(message)
+          logger_app.critical(message)

@@ -3,6 +3,7 @@
 import logging
 import os
 import requests
+import subprocess
 import json
 import pathlib
 from datetime import datetime, timedelta
@@ -13,9 +14,27 @@ import pytz
 import urllib.parse
 
 
-def log_handler_file(filename):
-    handler = logging.FileHandler(filename, mode='a', encoding='utf-8', delay=True)
-    return handler
+# https://www.scrapingbee.com/blog/python-wget
+def runcmd(cmd, verbose = False, *args, **kwargs):
+
+    process = subprocess.Popen(
+        cmd,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE,
+        text = True,
+        shell = True
+    )
+    std_out, std_err = process.communicate()
+    if verbose:
+        print(std_out.strip(), std_err)
+    pass
+
+def readtext(path):
+    content = None
+    f = open(path, 'r')
+    content = f.read()
+    f.close()
+    return content
 
 def writetext(path, message):
     if os.path.isfile(path):
@@ -32,11 +51,29 @@ def create_directory(path):
     if not os.path.exists(path):
        os.makedirs(path)
 
+def download_wget(url, path):
+    downloaded = 20
+    runcmd("wget -O '" + path + "' " + url)
+    downloaded = 0
+    return downloaded
+
+def download_request(url, path):
+    downloaded = 10
+    response = requests.get(url)
+    if (response.ok and response.status_code == 200) or (response.status_code == 400 and not response.ok):
+       with open(path, mode="wb") as f:
+            f.write(response.content)
+       downloaded = 0
+    else:
+       downloaded = response.status_code
+    return downloaded
+
 def download(url, path, overwrite, querystringtracking, progress=False, verbose=False):
     # 0 = success
     # 1 = already downloaded
-    # 10 = failed
-    downloaded = 10
+    # 10 = failed request
+    # 20 = failed wget
+    downloaded = 20
 
     if url != None and url !='':
        if not querystringtracking:
@@ -50,13 +87,9 @@ def download(url, path, overwrite, querystringtracking, progress=False, verbose=
              if verbose:
                 print(message)
 
-             response = requests.get(url)
-             if (response.ok and response.status_code == 200) or (response.status_code == 400 and not response.ok):
-                with open(path, mode="wb") as f:
-                     f.write(response.content)
-                downloaded = 0
-             else:
-                downloaded = response.status_code
+             downloaded = download_request(url, path)
+             if downloaded > 0:
+                downloaded = download_wget(url, path)
           else:
              downloaded = 1
        else:

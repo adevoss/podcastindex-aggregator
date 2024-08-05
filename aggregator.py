@@ -8,7 +8,7 @@ import requests
 
 import xml.etree.cElementTree as ET
 
-import config
+import configuration as config
 import log
 import PIfunctions
 import generalfunctions
@@ -60,7 +60,10 @@ def download(url, path, overwrite, querystringtracking):
          config.exception_count += 1
          message = url
          log.log(True, 'WARN', message)
-         message = "Download FAILED: HTTP status code: " + str(downloaded)
+         if downloaded == 10:
+            message = "Download FAILED: HTTP status code: " + str(downloaded)
+         if downloaded == 20:
+            message = "Download FAILED: wget"
          log.log(True, 'WARN', message)
 
 
@@ -122,13 +125,24 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
        tomorrowTZ = generalfunctions.tomorrow()
        message = feed_url + ' not live now'
 
-       xml = loadXML_podcast(feed_url)
-       lits = get_liveitems(xml, 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md')
-       if len(lits) == 0:
-          lits = get_liveitems(xml, 'https://podcastindex.org/namespace/1.0')
+       lits = None
+
        # TODO
        #lits = get_liveitems_api(feed_id)
+       #lits = lits["items"]
 
+       try:
+          xml = loadXML_podcast(feed_url, feed_title)
+          lits = get_liveitems(xml, 'https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md')
+          if lits == None:
+             lits = get_liveitems(xml, 'https://podcastindex.org/namespace/1.0')
+
+       except Exception as e:
+           config.exception_count += 1
+           message = 'Function: livestream (loadXML): ' + str(e)
+           log.log(True, 'ERROR', message)
+
+       print(str(len(lits)))
        if lits != None and len(lits) > 0:
           for lit in lits:
               message = feed_url + ' not live now'
@@ -201,19 +215,24 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
     except Exception as e:
         config.exception_count += 1
         message = 'Function: livestream: ' + str(e)
-        message = str(e)
         log.log(True, 'ERROR', message)
         print(message)
 
-def loadXML_podcast(feed):
+def loadXML_podcast(feed_url, feed_title):
     root = None
-    response = requests.get(feed)
-    fd, path = tempfile.mkstemp()
     try:
-       with os.fdopen(fd, 'wb') as tmp:
-          tmp.write(response.content)
+       fd, path = tempfile.mkstemp()
+       generalfunctions.download_wget(feed_url, path)
+
+       content = generalfunctions.readtext(path)
        tree = ET.parse(path)
        root = tree.getroot()
+
+    except Exception as e:
+        config.exception_count += 1
+        message = 'Function: loadXML_podcast: ' + str(e)
+        log.log(True, 'ERROR', message)
+        print(message)
     finally:
        os.remove(path)
     return root
@@ -573,8 +592,8 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
 
            downloaded = download(url, enclosure_path, overwrite, querystringtracking)
            if downloaded == 0:
-              message = "Downloaded: " + url
-              log.log(False, 'INFO', message)
+              #message = "Downloaded: " + url
+              #log.log(False, 'INFO', message)
               message = "Downloaded: " + enclosure_path
               log.log(False, 'INFO', message)
               config.count_newpodcasts += 1
@@ -755,7 +774,7 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
 
 
 try:
-    config.file = config.read_file() 
+    config.read() 
 
     prefix_error = config.file["settings"]["prefix_error"]
     prefix_file = config.file["settings"]["prefix_file"]
@@ -795,8 +814,6 @@ try:
        print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
     else:
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
-          number_of_episodes = int(config.file["settings"]["numberOfEpisodes"])
-
           aggregate(mode, podcast_to_process, number_of_episodes)
 
 except Exception as e:
