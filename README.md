@@ -1,10 +1,13 @@
 # podcastindex-aggregator
 Download your podcasts using the Podcast Index (https://podcastindex.org)
 
-To use you need a key. Please go to https://api.podcastindex.org/signup
+Prerequisites:
+- To use you need a key. Please go to https://api.podcastindex.org/signup
+- Install 'wget' using the package manager
+- Create a Python virtual environment
 
 Example:
-/path/to/aggregator.py
+python3 /path/to/aggregator.py
 
 Options:
 /path/to/aggregator.py [LIST | CHECK | LIVE | PROCESS] [ALL|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]
