@@ -142,7 +142,6 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
            message = 'Function: livestream (loadXML): ' + str(e)
            log.log(True, 'ERROR', message)
 
-       print(str(len(lits)))
        if lits != None and len(lits) > 0:
           for lit in lits:
               message = feed_url + ' not live now'
@@ -230,7 +229,7 @@ def loadXML_podcast(feed_url, feed_title):
 
     except Exception as e:
         config.exception_count += 1
-        message = 'Function: loadXML_podcast: ' + str(e)
+        message = 'Function: loadXML_podcast (' + feed_title + '): ' + str(e)
         log.log(True, 'ERROR', message)
         print(message)
     finally:
