@@ -114,7 +114,7 @@ def pi_search_podcast(query):
            print(feed['url'])
     return feeds
 
-def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, livefeed):
+def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, livefeed, podping):
     try:
        tzpretty = str(config.file["settings"]["timezone"])
        now = generalfunctions.now()
@@ -196,7 +196,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
                  if enddatestring != "":
                     leadindateTZ = generalfunctions.deltaminutes(startdateTZ, live_leadin)
                     leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
-                    if status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ):
+                    if podping or (not podping and status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ)):
                        prefix = prefix_live
                        message = title + ' NOW'
                        if not livefeed:
@@ -353,9 +353,9 @@ def check_podcast_feed(title, feedId, feedurl, playlisttxt_path, verbose):
           message = 'Checked feed url of ' + title + ' - ' + feedurl
        else:
           if feedurlPI == "":
-             message = title + " - feed url has been removed. *** Please edit podcast list"
+             message = prefix_list + title + " - feed url has been removed. *** Please edit podcast list"
           else:
-             message = title + " - feed url has changed from '" + feedurl + "' to '" + str(feedurlPI) + "' *** Please edit podcast list"
+             message = prefix_list + title + " - feed url has changed from '" + feedurl + "' to '" + str(feedurlPI) + "' *** Please edit podcast list"
           log.log(True, 'ERROR', message)
           generalfunctions.writetext(playlisttxt_path, message)
           print(message)
@@ -383,6 +383,10 @@ def pi_episodes(feedId, number_of_episodes):
 
 def process_file(data, data_path, number_of_episodes, playlisttxt_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process, querystringtracking):
     try:
+        podping_live = False
+        if mode == "PP_LIVE":
+           podping_live = True
+
         for podcast_data in data['podcastlist']:
             feedurl = "-"
             verbose = False
@@ -403,14 +407,14 @@ def process_file(data, data_path, number_of_episodes, playlisttxt_path, playlist
                   if mode == "LIST":
                      print(podcast_data['title'] + ' ' + podcast_data['id'])
 
-                  if mode == "CHECK" or mode == "PROCESS" or mode == "LIVE":
+                  if mode == "CHECK" or mode == "PROCESS" or mode == "LIVE" or mode == "PP_LIVE":
                      currentFeed = check_podcast_feed(podcast_data['title'], podcast_data['id'], podcast_data['feed'], playlisttxt_path, verbose)
 
                   if mode != "LIST" and currentFeed:
-                     if mode == "LIVE" or mode == "PROCESS":
+                     if mode == "LIVE" or mode == "PP_LIVE" or mode == "PROCESS":
                         livefeed = bool(podcast_data['live'])
 
-                        livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, playlisttxt_path, livefeed)
+                        livestream(podcast_data['feed'], podcast_data['id'], podcast_data['title'], playlist_path, playlisttxt_path, livefeed, podping_live)
 
                      if mode == "PROCESS":
                         process_podcast(podcast_data, number_of_episodes, data_path, playlisttxt_path, playlist_path, playlist_client_path, overwrite, mode, querystringtracking)
@@ -779,6 +783,7 @@ try:
     prefix_file = config.file["settings"]["prefix_file"]
     prefix_stream = config.file["settings"]["prefix_stream"]
     prefix_live = config.file["settings"]["prefix_live"]
+    prefix_list = config.file["settings"]["prefix_list"]
 
     number_of_episodes = config.file["settings"]["numberOfEpisodes"]
     verbose = config.file["settings"]["verbosity"]
@@ -810,9 +815,9 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
+       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PP_LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
     else:
-       if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE":
+       if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE" or mode == "PP_LIVE":
           aggregate(mode, podcast_to_process, number_of_episodes)
 
 except Exception as e:
