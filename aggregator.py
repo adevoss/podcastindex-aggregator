@@ -155,8 +155,6 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
               url = get_liveitem_url(lit)
 
               status = status.lower()
-              if title == "":
-                 title = feed_title
               if url == "":
                  url = "<not set>"
 
@@ -185,11 +183,11 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
 
               if startdatestring != "":
                  if startdateTZ > nowTZ and startdateTZ <= announcedateTZ:
-                    message = title + ' at ' + startdatepretty
+                    message = feed_title + ' - ' + title + ' at ' + startdatepretty
                     if startdateTZ.date() == nowTZ.date():
-                       message = title + ' today at ' + str(startdateTZ.time())
+                       message = feed_title + ' - ' + title + ' today at ' + str(startdateTZ.time())
                     if startdateTZ.date() == tomorrowTZ.date():
-                       message = title + ' tomorrow at ' + str(startdateTZ.time())
+                       message = feed_title + ' - ' + title + ' tomorrow at ' + str(startdateTZ.time())
                     if not livefeed:
                        message += ' on ' + url
                        generalfunctions.writetext(playlisttxt_path, prefix + message)
@@ -198,7 +196,7 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
                     leadoutdateTZ = generalfunctions.deltaminutes(enddateTZ, live_leadout)
                     if podping or (not podping and status == "live" and (leadindateTZ <= nowTZ and leadoutdateTZ >= nowTZ)):
                        prefix = prefix_live
-                       message = title + ' NOW'
+                       message = feed_title + ' - ' + title + ' NOW'
                        if not livefeed:
                           message += ' on ' + url
                        onair = True
