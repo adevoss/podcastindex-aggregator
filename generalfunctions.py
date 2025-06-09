@@ -52,28 +52,44 @@ def create_directory(path):
        os.makedirs(path)
 
 def download_wget(url, path):
-    downloaded = 20
+    downloaded = 999
     runcmd("wget -O '" + path + "' " + url)
-    downloaded = 0
+    if (os.path.exists(path)):
+       if os.path.getsize(path) == 0:
+          os.remove(path)
+       else:
+          downloaded = 200
     return downloaded
 
-def download_request(url, path):
-    downloaded = 10
-    response = requests.get(url)
+def download_request(url, path, proxy=None, useragent=None):
+    downloaded = 999
+
+    if proxy == None:
+       response = requests.get(url)
+    else:
+       proxies = {
+       'http': 'http://' + proxy,
+       'https': 'http://' + proxy
+       }
+       headers = {
+       "User-Agent": useragent
+       }
+       response = requests.get(url, proxies=proxies, headers=headers)
+
+    downloaded = response.status_code
     if (response.ok and response.status_code == 200) or (response.status_code == 400 and not response.ok):
        with open(path, mode="wb") as f:
             f.write(response.content)
-       downloaded = 0
-    else:
-       downloaded = response.status_code
+
     return downloaded
 
-def download(url, path, overwrite, querystringtracking, progress=False, verbose=False):
-    # 0 = success
+def download(url, path, overwrite, querystringtracking, proxy=None, useragent=None, progress=False, verbose=False):
     # 1 = already downloaded
-    # 10 = failed request
-    # 20 = failed wget
-    downloaded = 20
+    # 10 = success request
+    # 20 = success wget
+    # 30 = success request using proxy and headers
+    # 999 = failed
+    downloaded = 999
 
     if url != None and url !='':
        if not querystringtracking:
@@ -88,8 +104,20 @@ def download(url, path, overwrite, querystringtracking, progress=False, verbose=
                 print(message)
 
              downloaded = download_request(url, path)
-             if downloaded > 0:
+             if downloaded == 200 or downloaded == 400:
+                downloaded = 10
+             else:
                 downloaded = download_wget(url, path)
+                if downloaded == 200:
+                   downloaded = 20
+                else:
+                   downloaded = download_request(url, path, proxy, useragent)
+                   if downloaded == 200 or downloaded == 400:
+                      downloaded = 30
+
+             if os.path.exists(path) and os.path.getsize(path) == 0:
+                os.remove(path)
+
           else:
              downloaded = 1
        else:
