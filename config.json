@@ -44,10 +44,15 @@
         "announceLive":"24",
         "leadinLive":"15",
         "leadoutLive":"15",
+        "proxy":"example.com:3128",
+        "useragent":"xxxx",
+        "timeoutConnect":5,
+        "timeoutRead":300,
         "prefix_error":"[ERROR] ",
         "prefix_file":"[FILE] ",
         "prefix_stream":"[STREAM] ",
-        "prefix_live":"[LIVE] "
+        "prefix_live":"[LIVE] ",
+        "prefix_list":"[LIST] "
     },
     "file":{
         "podcastlist":"/path/to/podcastlist.json"
