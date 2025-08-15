@@ -1,4 +1,8 @@
-jq                 1.7.0
-python-dateutil    2.9.0.post0
-pytz               2024.1
-requests           2.32.3
+certifi
+charset-normalizer
+idna
+python-dateutil
+pytz
+requests
+six
+urllib3
