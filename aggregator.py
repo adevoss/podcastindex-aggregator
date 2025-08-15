@@ -728,7 +728,12 @@ def aggregate(mode, podcast_to_process, number_of_episodes):
         datadir = config.file["directory"]["data"]
         playlist_client_path = config.file["directory"]["playlist"]
         podcastlist_file = config.file["file"]["podcastlist"]
-        proxy = config.file["settings"]["proxy"]
+
+        proxy = None
+        useproxy = bool(config.file["settings"]["useproxy"])
+        if useproxy:
+           proxy = config.file["settings"]["proxy"]
+
         useragent = config.file["settings"]["useragent"]
         querystringtracking = bool(config.file["querystringtracking"]["enabled"])
 
