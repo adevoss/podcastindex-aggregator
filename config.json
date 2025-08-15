@@ -44,6 +44,7 @@
         "announceLive":"24",
         "leadinLive":"15",
         "leadoutLive":"15",
+        "useproxy":1,
         "proxy":"example.com:3128",
         "useragent":"xxxx",
         "timeoutConnect":5,
