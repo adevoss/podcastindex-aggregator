@@ -37,15 +37,15 @@ def readtext(path):
     return content
 
 def writetext(path, message):
+    result = 1
     if os.path.isfile(path):
-        with open(path, "a") as outfile:
-            outfile.write("\n")
+       with open(path, "a") as outfile:
+           outfile.write("\n")
+           outfile.write(message)
+       result = 0
     else:
-        with open(path, 'w') as outfile: 
-            pass
-
-    with open(path, "a") as outfile:
-        outfile.write(message)
+       pass
+    return result
 
 def create_directory(path):
     if not os.path.exists(path):

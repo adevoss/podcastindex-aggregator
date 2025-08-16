@@ -405,6 +405,21 @@ def pi_episodes(feedId, number_of_episodes):
        print(message)
     return episodes_result
 
+def pi_api(api_url):
+    api_response = None
+    if api_url == "ALL":
+       api_url = "episodes/byfeedid?id=920666"
+       print("Example: python " + sys.argv[0] + " API " + api_url)
+    else:
+       PIurl = config.file["podcastindex"]["url"]
+       url = PIurl + api_url
+       api_response = PIfunctions.request(url)
+       if api_response == None:
+          message = 'No data returned from podcastindex API call: ' + url
+          log.log(True, 'ERROR', message)
+          print(message)
+    return api_response
+
 
 def process_file(data, data_path, number_of_episodes, playlisttxt_path, playlist_path, playlist_client_path, overwrite, mode, podcast_to_process, querystringtracking, proxy, useragent):
     try:
@@ -846,14 +861,21 @@ try:
        podcast_to_process = "ALL"
 
     if mode == "-h" or mode == "--help":
-       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | CHECK | LIVE | PP_LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
+       print ('Usage: ' + sys.argv[0] + ' [LIST | SEARCH | API | CHECK | LIVE | PP_LIVE | PROCESS] [ALL|<search term>|<podcastindex-id>|<feedurl>] [numberOfEpisodes] [verbosity 0|1]')
     else:
        if mode == "PROCESS" or mode == "LIST" or mode == "SEARCH" or mode == "CHECK" or mode == "LIVE" or mode == "PP_LIVE":
           aggregate(mode, podcast_to_process, number_of_episodes)
+       if mode == "API":
+          response = pi_api(podcast_to_process)
+          if response != None:
+             fd, path = tempfile.mkstemp()
+             result = generalfunctions.writetext(path, str(response))
+             if result == 0:
+                print("Response is in: " + path)
+
 
 except Exception as e:
     config.exception_count += 1
     message = 'Function: aggregate: ' + str(e)
     log.log(True, 'ERROR', message)
     print(message)
-
