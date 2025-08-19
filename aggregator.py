@@ -16,7 +16,7 @@ import generalfunctions
 
 def download_result(downloaded):
     result = 999
-    if downloaded == 10 or downloaded == 20 or downloaded == 30:
+    if downloaded == 0 or downloaded == 10 or downloaded == 20 or downloaded == 30:
        result = 0
     if downloaded == 1:
        result = 1
@@ -83,6 +83,7 @@ def download(url, path, overwrite, querystringtracking, proxy, useragent):
       else:
          config.exception_count += 1
          log.log(True, 'ERROR', message)
+         print(message)
 
          message = "FAILED: "
          if downloaded == 999:
@@ -92,6 +93,7 @@ def download(url, path, overwrite, querystringtracking, proxy, useragent):
          message = message + str(downloaded)
 
          log.log(True, 'ERROR', message)
+         print(message)
 
 
     except Exception as e:
@@ -244,13 +246,15 @@ def livestream(feed_url, feed_id, feed_title, playlist_path, playlisttxt_path, l
 
 def loadXML_podcast(feed_url, feed_title):
     root = None
+    path = None
     try:
        fd, path = tempfile.mkstemp()
-       generalfunctions.download_wget(feed_url, path)
+       downloaded = generalfunctions.download_wget(feed_url, path)
 
-       content = generalfunctions.readtext(path)
-       tree = ET.parse(path)
-       root = tree.getroot()
+       if downloaded == 0:
+          content = generalfunctions.readtext(path)
+          tree = ET.parse(path)
+          root = tree.getroot()
 
     except Exception as e:
         config.exception_count += 1
@@ -258,7 +262,8 @@ def loadXML_podcast(feed_url, feed_title):
         log.log(True, 'ERROR', message)
         print(message)
     finally:
-       os.remove(path)
+       if os.path.exists(path):
+          os.remove(path)
     return root
 
 def get_liveitems_api(feedId):
@@ -582,6 +587,25 @@ def process_chapter(chapter, path, overwrite, querystringtracking, proxy, userag
         print(message)
 
 
+def exception(function, podcast_title, title, url, path, exception):
+        config.exception_count += 1
+        message = "Function: " + function + ": '" + podcast_title + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: " + function + ": '" + title + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: " + function + ": '" + url + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: " + function + ": '" + path + "'"
+        log.log(True, 'ERROR', message)
+        print(message)
+        message = "Function: process_episode: " + exception
+        log.log(True, 'ERROR', message)
+        print(message)
+
+
 def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, playlist_path, podcast_client_path, querystringtracking, proxy, useragent):
     try:
         title = episode["title"]
@@ -609,8 +633,11 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
         path = os.path.join(episode_path, path)
         generalfunctions.write_file(path, json.dumps(episode, indent = 2))
 
-        # download episode assets
+    except Exception as e:
+        exception("process_episode (logging)", podcast_title, title, url, path, str(e))
 
+    # download episode assets
+    try:
         # image
         url = episode["image"]
         url_split = url.rsplit('?', -1)
@@ -621,6 +648,10 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
             path = os.path.join(episode_path, path)
             downloaded = download(url, path, overwrite, querystringtracking, proxy, useragent)
 
+    except Exception as e:
+        exception("process_episode (image)", podcast_title, title, url, path, str(e))
+
+    try:
         # enclosure url
         url = episode["enclosureUrl"]
         if url != None and url != '':
@@ -646,14 +677,18 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
               log.log(True, 'ERROR', message)
               generalfunctions.writetext(playlisttxt_path, prefix_error + message)
 
+    except Exception as e:
+        exception("process_episode (enclosure)", podcast_title, title, url, path, str(e))
+
+    try:
         # chapters
         url = episode["chaptersUrl"]
         if url != None and url != '':
             path = os.path.basename(url)
             path = os.path.join(episode_path, path)
-            downloaded = download(url, path, True, querystringtracking, proxy, useragent)
+            chapter_file = generalfunctions.strip_querystring_path(path)
+            downloaded = download(url, chapter_file, True, querystringtracking, proxy, useragent)
             if download_result(downloaded) == 0:
-               chapter_file = generalfunctions.strip_querystring_path(path)
 
                # create directory for chapters
                path = os.path.join(episode_path, 'Chapters')
@@ -663,7 +698,7 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
                # read chapters
                chapters = generalfunctions.read_json(chapter_file)
 
-               if chapters != None and chapters != '':
+               if chapters != None and chapters != "":
                   if chapters == "ERROR":
                      config.exception_count += 1
                      message = "Chapter file is not valid JSON: '" + chapter_file + "'"
@@ -680,34 +715,23 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
             else: 
                config.exception_count += 1
                message = 'Podcast chapters not downloaded. Returncode: ' + str(downloaded)
+               message = "Podcast '" + podcast_title + " - " + title + "' chapters not downloaded. Returncode: " + str(downloaded)
                log.log(True, 'ERROR', message)
                print(message)
 
+    except Exception as e:
+        exception("process_episode (chapters)", podcast_title, title, url, path, str(e))
+
+    try:
         # transcript
         url = episode["transcriptUrl"]
         if url != None and url != '':
             path = os.path.basename(url)
             path = os.path.join(episode_path, path)
-            generalfunctions.download(url, path, True, querystringtracking, proxy, useragent)
-
-
+            downloaded = download(url, path, True, querystringtracking, proxy, useragent)
 
     except Exception as e:
-        config.exception_count += 1
-        message = "Function: process_episode: '" + podcast_title + "'"
-        log.log(True, 'ERROR', message)
-        message = "Function: process_episode: '" + title + "'"
-        log.log(True, 'ERROR', message)
-        print(message)
-        message = "Function: process_episode: '" + url + "'"
-        log.log(True, 'ERROR', message)
-        print(message)
-        message = "Function: process_episode: '" + path + "'"
-        log.log(True, 'ERROR', message)
-        print(message)
-        message = "Function: process_episode: " + str(e)
-        log.log(True, 'ERROR', message)
-        print(message)
+        exception("process_episode (transcripts)", podcast_title, title, url, path, str(e))
 
 
 def process_episodes(feedId, number_of_episodes, feedTitle, path, playlisttxt_path, playlist_path, podcast_client_path, overwrite, querystringtracking, proxy, useragent):

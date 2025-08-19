@@ -2,6 +2,7 @@
 
 import logging
 import os
+import shutil
 import requests
 import subprocess
 import json
@@ -38,13 +39,19 @@ def readtext(path):
 
 def writetext(path, message):
     result = 1
-    if os.path.isfile(path):
-       with open(path, "a") as outfile:
-           outfile.write("\n")
-           outfile.write(message)
-       result = 0
+    mode = "none"
+    if os.path.exists(path):
+       if os.path.isfile(path):
+          mode = "a"
     else:
-       pass
+       mode = "w"
+
+    if mode == "w" or mode == "a":
+       with open(path, mode) as outfile:
+          if mode == "a":
+             outfile.write("\n")
+          outfile.write(message)
+       result = 0
     return result
 
 def create_directory(path):
@@ -53,12 +60,19 @@ def create_directory(path):
 
 def download_wget(url, path):
     downloaded = 999
+    if (os.path.exists(path)):
+       shutil.copy(path, path + ".bak")
+
     runcmd("wget -O '" + path + "' " + url)
     if (os.path.exists(path)):
        if os.path.getsize(path) == 0:
           os.remove(path)
+          if (os.path.exists(path + ".bak")):
+             shutil.move(path + ".bak", path)
        else:
-          downloaded = 200
+          downloaded = 0
+          if (os.path.exists(path + ".bak")):
+             os.remove(path + ".bak")
     return downloaded
 
 def download_request(url, path, proxy=None, useragent=None):
@@ -108,7 +122,7 @@ def download(url, path, overwrite, querystringtracking, proxy=None, useragent=No
                 downloaded = 10
              else:
                 downloaded = download_wget(url, path)
-                if downloaded == 200:
+                if downloaded == 0:
                    downloaded = 20
                 else:
                    downloaded = download_request(url, path, proxy, useragent)
