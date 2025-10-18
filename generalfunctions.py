@@ -149,7 +149,7 @@ def sanitize(path):
 
 def sanitize_path(path, isFileName):
     sanitized = path
-    illegal = '{}\\'
+    illegal = "{}\\'?"
     for char in illegal:
         sanitized = sanitized.replace(char, '')
     if isFileName:
