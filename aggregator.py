@@ -611,6 +611,8 @@ def process_episode(podcast_title, episode, path, overwrite, playlisttxt_path, p
         title = episode["title"]
         title = generalfunctions.sanitize_path(title, False)
         title = title.replace('/', '')
+        title = title.replace('*', '-')
+        print(title)
         length = episode["duration"]
         timestamp_episode = int(episode["datePublished"])
         date_episode = generalfunctions.timestamp_to_date(timestamp_episode)

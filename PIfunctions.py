@@ -51,10 +51,20 @@ def request(url):
        timeout_read = config.file["settings"]["timeoutRead"]
        wait = config.file["podcastindex"]["wait"]
        time.sleep(wait)
-       r = requests.post(url, headers=request_header(), timeout=(timeout_connect, timeout_read))
+       response = requests.post(url, headers=request_header(), timeout=(timeout_connect, timeout_read))
 
-       # dump the contents (in a prettified json-format)
-       result = json.loads(r.text)
+       # Check for rate limit headers
+       if('X-Rate-Limit' in response.headers or
+          'X-RateLimit-Remaining' in response.headers or
+          'Retry-After' in response.headers or
+          'X-RateLimit-Reset' in response.headers or
+          response.status_code == 429):
+          message = 'Podcast Index API call: Rate limited: Status code = ' + str(response.status_code) + ' Headers: ' + str(response.headers)
+          log.log(True, 'ERROR', message)
+          print(message)
+       else:
+          # dump the contents (in a prettified json-format)
+          result = json.loads(response.text)
 
     except Exception as e:
        message = 'Podcast Index API call: ' + str(e)
